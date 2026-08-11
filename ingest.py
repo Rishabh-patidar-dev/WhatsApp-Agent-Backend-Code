@@ -1,9 +1,13 @@
 """One-time ingestion script for the Cruz Roja course catalogue in English."""
 import os
+import sys
 from dotenv import load_dotenv
 import psycopg
 from google import genai
 from google.genai import types
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
 
 load_dotenv()
 
