@@ -1,4 +1,5 @@
 -- Run this once in the Supabase SQL Editor before using ingest.py / server.py.
+-- Uses vector(768) to match Gemini's gemini-embedding-001 (output_dimensionality=768).
 
 create extension if not exists vector;
 
@@ -7,7 +8,7 @@ create table if not exists course_chunks (
     category text not null,
     title text not null,
     content text not null,
-    embedding vector(1536) not null
+    embedding vector(768) not null
 );
 
 create table if not exists leads (
@@ -17,7 +18,7 @@ create table if not exists leads (
     last_seen_at timestamptz not null default now()
 );
 
-create or replace function match_course_chunks(query_embedding vector(1536), match_count int)
+create or replace function match_course_chunks(query_embedding vector(768), match_count int)
 returns table (
     title text,
     content text,

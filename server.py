@@ -5,7 +5,8 @@ import requests
 import psycopg
 from psycopg.rows import dict_row
 from fastapi import FastAPI, Request, HTTPException, BackgroundTasks
-from openai import OpenAI
+from google import genai
+from google.genai import types
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -17,18 +18,20 @@ VERIFY_TOKEN = os.environ["META_VERIFY_TOKEN"]
 DATABASE_URL = os.environ["DATABASE_URL"]
 
 META_API = f"https://graph.facebook.com/v20.0/{META_PHONE_ID}/messages"
-openai_client = OpenAI()
 
-# LLM Selection Logic
-LLM = None
-if os.environ.get("ANTHROPIC_API_KEY"):
+# Gemini is used for embeddings unconditionally (free tier, no credit card needed)
+gemini_client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+EMBEDDING_MODEL = "gemini-embedding-001"
+EMBEDDING_DIM = 768
+GEMINI_CHAT_MODEL = "gemini-3.5-flash-lite"
+
+# Chat LLM Selection — defaults to free Gemini; set CHAT_PROVIDER=claude to use Anthropic instead
+CHAT_PROVIDER = os.environ.get("CHAT_PROVIDER", "gemini").strip().lower()
+if CHAT_PROVIDER == "claude":
     from anthropic import Anthropic
     LLM = ("claude", Anthropic())
-elif os.environ.get("GEMINI_API_KEY"):
-    from google import genai
-    LLM = ("gemini", genai.Client(api_key=os.environ["GEMINI_API_KEY"]))
 else:
-    raise RuntimeError("Please set ANTHROPIC_API_KEY or GEMINI_API_KEY in your .env file.")
+    LLM = ("gemini", gemini_client)
 
 app = FastAPI(title="Cruz Roja WhatsApp Agent")
 
@@ -63,10 +66,14 @@ def process_message(from_phone: str, user_text: str):
     history = lead.get("history") or []
 
     # Generate query embedding
-    emb = openai_client.embeddings.create(
-        model="text-embedding-3-small",
-        input=user_text
-    ).data[0].embedding
+    emb = gemini_client.models.embed_content(
+        model=EMBEDDING_MODEL,
+        contents=user_text,
+        config=types.EmbedContentConfig(
+            task_type="RETRIEVAL_QUERY",
+            output_dimensionality=EMBEDDING_DIM,
+        ),
+    ).embeddings[0].values
 
     # Match relevant knowledge base chunks from Supabase
     with psycopg.connect(DATABASE_URL, row_factory=dict_row, prepare_threshold=None) as conn:
@@ -140,8 +147,12 @@ def generate_llm_reply(user_msg: str, context: str, history: list) -> str:
         return response.content[0].text.strip()
     else:
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
-            contents=f"{SYSTEM_PROMPT}\n\n{prompt}",
+            model=GEMINI_CHAT_MODEL,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                system_instruction=SYSTEM_PROMPT,
+                max_output_tokens=300,
+            ),
         )
         return (response.text or "").strip()
 

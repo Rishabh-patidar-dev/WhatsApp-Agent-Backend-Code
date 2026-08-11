@@ -2,11 +2,14 @@
 import os
 from dotenv import load_dotenv
 import psycopg
-from openai import OpenAI
+from google import genai
+from google.genai import types
 
 load_dotenv()
 
-client = OpenAI()
+client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+EMBEDDING_MODEL = "gemini-embedding-001"
+EMBEDDING_DIM = 768
 
 # English translated catalogue chunks
 CHUNKS = [
@@ -60,8 +63,15 @@ CHUNKS = [
 
 
 def embed(text: str) -> list:
-    r = client.embeddings.create(model="text-embedding-3-small", input=text)
-    return r.data[0].embedding
+    r = client.models.embed_content(
+        model=EMBEDDING_MODEL,
+        contents=text,
+        config=types.EmbedContentConfig(
+            task_type="RETRIEVAL_DOCUMENT",
+            output_dimensionality=EMBEDDING_DIM,
+        ),
+    )
+    return r.embeddings[0].values
 
 
 def main():
