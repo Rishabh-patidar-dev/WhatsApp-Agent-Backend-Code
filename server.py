@@ -369,7 +369,7 @@ ENROLL_PROMPTS = {
         "name": "Thanks! What's your full name?\n(Type *cancel* anytime to stop.)",
         "email": "Nice to meet you, {name}! What's your email address?\n(Type *cancel* anytime to stop.)",
         "email_retry": "Hmm, that doesn't look like a valid email. Could you try again?",
-        "phone": "Got it. What's the best 10-digit phone number to reach you at? (e.g. 5512345678)\n(Type *cancel* anytime to stop.)",
+        "phone": "Got it. What's the 10-digit phone number to reach you at? (e.g. 5512345678)\n(Type *cancel* anytime to stop.)",
         "phone_retry": "That doesn't look like a valid 10-digit phone number. Could you try again? (e.g. 5512345678)",
         "address": "Almost done! What's your address?\n(Type *cancel* anytime to stop.)",
         "complete": (
