@@ -1,6 +1,7 @@
 """Cruz Roja WhatsApp Agent Backend Service."""
 import os
 import json
+import threading
 import requests
 import psycopg
 from psycopg.rows import dict_row
@@ -33,13 +34,43 @@ if CHAT_PROVIDER == "claude":
 else:
     LLM = ("gemini", gemini_client)
 
-# Optional: push new leads to the Cruz Roja Dashboard. Skipped entirely if unset.
+# Optional: push completed enrollments to the Cruz Roja Dashboard. Skipped if unset.
 DASHBOARD_URL = os.environ.get("DASHBOARD_URL", "").rstrip("/")
 INGEST_TOKEN = os.environ.get("INGEST_TOKEN", "")
 
 TRANSLATE_TRIGGER = "translate"
+ENROLL_KEYWORDS = ("enroll", "enrol", "sign up", "signup", "register", "inscrib", "registrar")
+CANCEL_KEYWORDS = ("cancel", "cancelar", "stop", "nevermind", "never mind")
+
+# Conversation states
+GREET, CHATTING = "GREET", "CHATTING"
+ENROLL_COURSE, ENROLL_NAME, ENROLL_EMAIL, ENROLL_PHONE, ENROLL_ADDRESS = (
+    "ENROLL_COURSE", "ENROLL_NAME", "ENROLL_EMAIL", "ENROLL_PHONE", "ENROLL_ADDRESS"
+)
 
 app = FastAPI(title="Cruz Roja WhatsApp Agent")
+
+# Serializes processing per phone number. Each process_message() call does several
+# blocking DB round-trips and an HTTP send; without this, messages sent close
+# together (e.g. a user quickly answering the enrollment prompts) can have their
+# background tasks overlap and interleave reads/writes of the same lead row,
+# corrupting conversation state. Single-worker deployment (WEB_CONCURRENCY=1 on
+# Render) makes a plain in-process lock sufficient here.
+_phone_locks: dict[str, threading.Lock] = {}
+_phone_locks_guard = threading.Lock()
+
+
+def _get_phone_lock(phone: str) -> threading.Lock:
+    with _phone_locks_guard:
+        lock = _phone_locks.get(phone)
+        if lock is None:
+            lock = threading.Lock()
+            _phone_locks[phone] = lock
+        return lock
+
+
+def has_any(text: str, keywords: tuple) -> bool:
+    return any(k in text for k in keywords)
 
 
 # 1. Meta Webhook Verification Endpoint
@@ -63,32 +94,132 @@ async def receive_webhook(request: Request, bg: BackgroundTasks):
             contact_name = entry["contacts"][0]["profile"]["name"]
         except (KeyError, IndexError):
             pass
+
         if msg.get("type") == "text":
-            bg.add_task(process_message, msg["from"], msg["text"]["body"], contact_name)
+            bg.add_task(process_message, msg["from"], msg["text"]["body"], contact_name, None)
+        elif msg.get("type") == "interactive":
+            interactive = msg.get("interactive", {})
+            reply = interactive.get("button_reply") or interactive.get("list_reply")
+            if reply:
+                bg.add_task(process_message, msg["from"], reply.get("title", ""), contact_name, reply.get("id"))
     except (KeyError, IndexError):
-        pass  # Event is a status update or non-text message; ignore
+        pass  # Event is a status update or unsupported message type; ignore
 
     return {"status": "ok"}  # Fast 200 response to satisfy Meta timeout
 
 
-# 3. RAG Core Pipeline
-def process_message(from_phone: str, user_text: str, contact_name: str | None = None):
+# 3. Conversation Pipeline (greeting -> chat/RAG -> enrollment -> dashboard)
+def process_message(from_phone: str, user_text: str, contact_name: str | None = None, button_id: str | None = None):
+    """Entry point for background tasks — serializes per phone number (see _get_phone_lock).
+
+    Any unhandled error here (Gemini/Meta/DB transient failures) would otherwise abort
+    silently, leaving the user with no reply and no idea their message didn't go through.
+    """
+    with _get_phone_lock(from_phone):
+        try:
+            _process_message_locked(from_phone, user_text, contact_name, button_id)
+        except Exception as e:
+            print(f"[ERROR] process_message crashed for {from_phone}: {e!r}")
+            language = "en"
+            try:
+                language = (get_or_create_lead(from_phone)[0].get("language")) or "en"
+            except Exception:
+                pass
+            send_whatsapp_message(from_phone, RETRY_MESSAGE.get(language, RETRY_MESSAGE["en"]))
+
+
+def _process_message_locked(from_phone: str, user_text: str, contact_name: str | None, button_id: str | None):
     lead, is_new = get_or_create_lead(from_phone)
     language = lead.get("language") or "en"
+    state = lead.get("state") or GREET
+    draft = lead.get("enrollment_draft") or {}
 
+    stripped = user_text.strip()
+    lower = stripped.lower()
+
+    # Greet brand-new leads once, then fall through to handle their actual message normally.
     if is_new:
-        push_lead_to_dashboard(from_phone, contact_name, user_text, language)
+        send_whatsapp_buttons(from_phone, GREETING_TEXT[language], GREETING_BUTTONS[language])
+        set_lead_state(from_phone, CHATTING)
+        state = CHATTING
 
-    # Language switch command — handled as a side effect, not a RAG query
-    if user_text.strip().lower() == TRANSLATE_TRIGGER:
+    # Language switch works from any state
+    if lower == TRANSLATE_TRIGGER:
         new_language = "es" if language == "en" else "en"
         set_lead_language(from_phone, new_language)
-        confirmation = (
-            "Idioma cambiado a español. ¿En qué puedo ayudarte?"
-            if new_language == "es"
-            else "Language switched to English. How can I help you?"
+        send_whatsapp_message(from_phone, TRANSLATE_CONFIRMATION[new_language])
+        return
+
+    # Button taps carry unambiguous intent — handle before anything else
+    if button_id == "enroll_now":
+        set_enrollment_draft(from_phone, {})
+        set_lead_state(from_phone, ENROLL_COURSE)
+        send_whatsapp_message(from_phone, ENROLL_PROMPTS[language]["course"])
+        return
+    if button_id in ("browse_courses", "ask_question"):
+        set_lead_state(from_phone, CHATTING)
+        send_whatsapp_message(from_phone, BROWSE_HINT[language])
+        return
+
+    # Escape hatch out of an in-progress enrollment
+    if state.startswith("ENROLL_") and has_any(lower, CANCEL_KEYWORDS):
+        set_lead_state(from_phone, CHATTING)
+        set_enrollment_draft(from_phone, {})
+        send_whatsapp_message(from_phone, CANCEL_CONFIRMATION[language])
+        return
+
+    # --- Enrollment state machine ---
+    if state == ENROLL_COURSE:
+        draft["course"] = stripped
+        set_enrollment_draft(from_phone, draft)
+        set_lead_state(from_phone, ENROLL_NAME)
+        send_whatsapp_message(from_phone, ENROLL_PROMPTS[language]["name"])
+        return
+
+    if state == ENROLL_NAME:
+        draft["name"] = stripped
+        set_enrollment_draft(from_phone, draft)
+        set_lead_state(from_phone, ENROLL_EMAIL)
+        send_whatsapp_message(from_phone, ENROLL_PROMPTS[language]["email"].format(name=draft["name"]))
+        return
+
+    if state == ENROLL_EMAIL:
+        if "@" not in stripped or "." not in stripped:
+            send_whatsapp_message(from_phone, ENROLL_PROMPTS[language]["email_retry"])
+            return
+        draft["email"] = stripped
+        set_enrollment_draft(from_phone, draft)
+        set_lead_state(from_phone, ENROLL_PHONE)
+        send_whatsapp_message(from_phone, ENROLL_PROMPTS[language]["phone"])
+        return
+
+    if state == ENROLL_PHONE:
+        draft["phone"] = stripped
+        set_enrollment_draft(from_phone, draft)
+        set_lead_state(from_phone, ENROLL_ADDRESS)
+        send_whatsapp_message(from_phone, ENROLL_PROMPTS[language]["address"])
+        return
+
+    if state == ENROLL_ADDRESS:
+        draft["address"] = stripped
+        # Transition state before pushing so a duplicate Meta delivery can't double-submit.
+        set_lead_state(from_phone, CHATTING)
+        set_enrollment_draft(from_phone, {})
+        push_enrollment_to_dashboard(from_phone, draft, language)
+        send_whatsapp_message(
+            from_phone,
+            ENROLL_PROMPTS[language]["complete"].format(
+                name=draft.get("name", ""), course=draft.get("course", ""),
+                email=draft.get("email", ""), phone=draft.get("phone", ""),
+            ),
         )
-        send_whatsapp_message(from_phone, confirmation)
+        return
+
+    # --- CHATTING: normal Q&A, watching for enrollment intent ---
+    if has_any(lower, ENROLL_KEYWORDS):
+        set_enrollment_draft(from_phone, {})
+        set_lead_state(from_phone, ENROLL_COURSE)
+        send_whatsapp_message(from_phone, ENROLL_PROMPTS[language]["course"])
         return
 
     history = lead.get("history") or []
@@ -112,6 +243,7 @@ def process_message(from_phone: str, user_text: str, contact_name: str | None = 
 
     context = "\n\n".join(f"[{m['title']}]\n{m['content']}" for m in matches)
     reply = generate_llm_reply(user_text, context, history, language)
+    reply_with_hint = f"{reply}\n\n{CHAT_HINT[language]}"
 
     # Maintain conversation state (Keep up to 20 recent messages)
     history.extend([
@@ -119,7 +251,7 @@ def process_message(from_phone: str, user_text: str, contact_name: str | None = 
         {"role": "assistant", "text": reply}
     ])
     save_lead_history(from_phone, history[-20:])
-    send_whatsapp_message(from_phone, reply)
+    send_whatsapp_message(from_phone, reply_with_hint)
 
 
 # 4. Database Helper Functions
@@ -156,20 +288,95 @@ def set_lead_language(phone: str, language: str):
         conn.commit()
 
 
+def set_lead_state(phone: str, state: str):
+    with psycopg.connect(DATABASE_URL, prepare_threshold=None) as conn:
+        conn.execute(
+            "UPDATE leads SET state = %s, last_seen_at = NOW() WHERE phone = %s",
+            (state, phone)
+        )
+        conn.commit()
+
+
+def set_enrollment_draft(phone: str, draft: dict):
+    with psycopg.connect(DATABASE_URL, prepare_threshold=None) as conn:
+        conn.execute(
+            "UPDATE leads SET enrollment_draft = %s WHERE phone = %s",
+            (json.dumps(draft), phone)
+        )
+        conn.commit()
+
+
 def mark_lead_pushed(phone: str):
     with psycopg.connect(DATABASE_URL, prepare_threshold=None) as conn:
         conn.execute("UPDATE leads SET pushed_to_dashboard = TRUE WHERE phone = %s", (phone,))
         conn.commit()
 
 
-# 5. LLM Prompting & Response Generation
+# 5. Conversational Text (bilingual) — greeting, hints, enrollment prompts
+RETRY_MESSAGE = {
+    "en": "⚠️ Sorry, something went wrong on my end. Could you please send that again?",
+    "es": "⚠️ Lo siento, ocurrió un error de mi parte. ¿Podrías enviarlo de nuevo?",
+}
+GREETING_TEXT = {
+    "en": "👋 Welcome to the Mexican Red Cross Training Coordination! I can help you learn about our courses and get you enrolled. What would you like to do?",
+    "es": "👋 ¡Bienvenido a la Coordinación de Capacitación de la Cruz Roja Mexicana! Puedo ayudarte a conocer nuestros cursos e inscribirte. ¿Qué te gustaría hacer?",
+}
+GREETING_BUTTONS = {
+    "en": [("browse_courses", "Browse Courses"), ("enroll_now", "Enroll Now"), ("ask_question", "Ask a Question")],
+    "es": [("browse_courses", "Ver Cursos"), ("enroll_now", "Inscribirme"), ("ask_question", "Preguntar")],
+}
+BROWSE_HINT = {
+    "en": 'Great! Ask me things like "What first aid courses do you have?" or "How much does CPR cost?" 💬',
+    "es": 'Perfecto! Pregúntame cosas como "¿Qué cursos de primeros auxilios tienen?" o "¿Cuánto cuesta el CPR?" 💬',
+}
+CHAT_HINT = {
+    "en": "💡 Ask about another course, or type *enroll* to sign up for one.",
+    "es": "💡 Pregunta sobre otro curso, o escribe *inscribirme* para registrarte en uno.",
+}
+TRANSLATE_CONFIRMATION = {
+    "es": "Idioma cambiado a español. ¿En qué puedo ayudarte?",
+    "en": "Language switched to English. How can I help you?",
+}
+CANCEL_CONFIRMATION = {
+    "en": "No problem, enrollment cancelled. Ask me anything about our courses anytime! 💬",
+    "es": "No hay problema, inscripción cancelada. ¡Pregúntame lo que quieras sobre nuestros cursos! 💬",
+}
+ENROLL_PROMPTS = {
+    "en": {
+        "course": "Great, let's get you enrolled! 📝 Which course are you interested in?\n(Type *cancel* anytime to stop.)",
+        "name": "Thanks! What's your full name?\n(Type *cancel* anytime to stop.)",
+        "email": "Nice to meet you, {name}! What's your email address?\n(Type *cancel* anytime to stop.)",
+        "email_retry": "Hmm, that doesn't look like a valid email. Could you try again?",
+        "phone": "Got it. What's the best phone number to reach you at?\n(Type *cancel* anytime to stop.)",
+        "address": "Almost done! What's your address?\n(Type *cancel* anytime to stop.)",
+        "complete": (
+            "🎉 Thank you, {name}! Your interest in *{course}* has been received. "
+            "Our team will contact you soon at {email} / {phone}. "
+            "Feel free to keep asking me questions anytime!"
+        ),
+    },
+    "es": {
+        "course": "¡Perfecto, vamos a inscribirte! 📝 ¿En qué curso estás interesado?\n(Escribe *cancelar* en cualquier momento para detener.)",
+        "name": "¡Gracias! ¿Cuál es tu nombre completo?\n(Escribe *cancelar* en cualquier momento para detener.)",
+        "email": "¡Mucho gusto, {name}! ¿Cuál es tu correo electrónico?\n(Escribe *cancelar* en cualquier momento para detener.)",
+        "email_retry": "Ese correo no parece válido. ¿Podrías intentarlo de nuevo?",
+        "phone": "Entendido. ¿Cuál es el mejor número de teléfono para contactarte?\n(Escribe *cancelar* en cualquier momento para detener.)",
+        "address": "¡Ya casi! ¿Cuál es tu dirección?\n(Escribe *cancelar* en cualquier momento para detener.)",
+        "complete": (
+            "🎉 ¡Gracias, {name}! Hemos recibido tu interés en *{course}*. "
+            "Nuestro equipo te contactará pronto al {email} / {phone}. "
+            "¡Puedes seguir haciéndome preguntas cuando quieras!"
+        ),
+    },
+}
+
 SYSTEM_PROMPTS = {
     "en": """You are the official digital assistant for the Mexican Red Cross Training Coordination.
 You ALWAYS respond in clear, helpful, and polite English, strictly within 2 to 4 sentences maximum (formatting for WhatsApp).
 
 RULES:
 - Base your answers strictly on the CONTEXT provided below. Do not make up prices, dates, or non-existent courses.
-- If the user wants to register or enroll, direct them to email cursos@cruzrojamexicana.org.mx or call 72 2335 6016.
+- If the user wants to register or enroll in a course, let them know they can type *enroll* right here in the chat to sign up.
 - If asked about something outside the catalog, share what information you do have and direct them to contact support.
 - If the request is a real emergency, instruct them immediately to call 911.""",
     "es": """Eres el asistente digital oficial de la Coordinación de Capacitación de la Cruz Roja Mexicana.
@@ -177,7 +384,7 @@ SIEMPRE respondes en español claro, útil y cortés, estrictamente en un máxim
 
 REGLAS:
 - Basa tus respuestas estrictamente en el CONTEXTO proporcionado a continuación. No inventes precios, fechas ni cursos inexistentes.
-- Si el usuario desea registrarse o inscribirse, dirígelo al correo cursos@cruzrojamexicana.org.mx o al teléfono 72 2335 6016.
+- Si el usuario desea registrarse o inscribirse en un curso, indícale que puede escribir *inscribirme* aquí mismo en el chat para registrarse.
 - Si te preguntan algo fuera del catálogo, comparte la información que tengas y dirígelo a contactar soporte.
 - Si la solicitud es una emergencia real, indícale de inmediato que llame al 911.""",
 }
@@ -216,36 +423,60 @@ def generate_llm_reply(user_msg: str, context: str, history: list, language: str
         return (response.text or "").strip()
 
 
-# 6. Meta WhatsApp Message Delivery Helper
-def send_whatsapp_message(to_phone: str, message_body: str):
+# 6. Meta WhatsApp Message Delivery Helpers
+def _post_to_meta(payload: dict, action: str):
     headers = {
         "Authorization": f"Bearer {META_TOKEN}",
         "Content-Type": "application/json"
     }
-    payload = {
+    response = requests.post(META_API, headers=headers, json=payload, timeout=10)
+    if not response.ok:
+        print(f"[ERROR] Failed to {action}: {response.status_code} {response.text}")
+
+
+def send_whatsapp_message(to_phone: str, message_body: str):
+    _post_to_meta({
         "messaging_product": "whatsapp",
         "to": to_phone,
         "type": "text",
         "text": {"body": message_body}
-    }
-    response = requests.post(META_API, headers=headers, json=payload, timeout=10)
-    if not response.ok:
-        print(f"[ERROR] Failed to send WhatsApp message: {response.status_code} {response.text}")
+    }, "send WhatsApp message")
 
 
-# 7. Dashboard Lead Push (Cruz Roja Records Dashboard)
-def push_lead_to_dashboard(phone: str, name: str | None, first_message: str, language: str):
+def send_whatsapp_buttons(to_phone: str, body_text: str, buttons: list[tuple[str, str]]):
+    """buttons: list of (id, title) tuples, max 3, title <= 20 chars."""
+    _post_to_meta({
+        "messaging_product": "whatsapp",
+        "to": to_phone,
+        "type": "interactive",
+        "interactive": {
+            "type": "button",
+            "body": {"text": body_text},
+            "action": {
+                "buttons": [
+                    {"type": "reply", "reply": {"id": bid, "title": title}}
+                    for bid, title in buttons
+                ]
+            },
+        },
+    }, "send WhatsApp buttons")
+
+
+# 7. Dashboard Lead Push (Cruz Roja Records Dashboard) — fired on enrollment completion
+def push_enrollment_to_dashboard(phone: str, draft: dict, language: str):
     if not DASHBOARD_URL or not INGEST_TOKEN:
         return  # Dashboard integration not configured — skip silently
 
     comment = (
-        f"WhatsApp inquiry via Cruz Roja Agent. First message: \"{first_message}\". "
-        f"Preferred language: {language}."
+        f"Course interest: {draft.get('course', 'N/A')}. "
+        f"Address: {draft.get('address', 'N/A')}. "
+        f"Requested via WhatsApp enrollment flow. Preferred language: {language}."
     )[:2000]
 
     payload = {
-        "name": name or "WhatsApp Lead",
-        "phone": phone,
+        "name": draft.get("name") or "WhatsApp Lead",
+        "email": draft.get("email", ""),
+        "phone": draft.get("phone") or phone,
         "comment": comment,
     }
     try:
@@ -256,7 +487,7 @@ def push_lead_to_dashboard(phone: str, name: str | None, first_message: str, lan
             timeout=10,
         )
         if not response.ok:
-            print(f"[ERROR] Failed to push lead to dashboard: {response.status_code} {response.text}")
+            print(f"[ERROR] Failed to push enrollment to dashboard: {response.status_code} {response.text}")
     except requests.RequestException as e:
         print(f"[ERROR] Dashboard push request failed: {e}")
     finally:

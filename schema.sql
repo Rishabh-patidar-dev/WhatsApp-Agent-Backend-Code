@@ -12,7 +12,15 @@ create table if not exists course_chunks (
 );
 
 create table if not exists leads (
-    phone text primary key,
+    id uuid primary key default gen_random_uuid(),
+    phone text not null unique,
+    name text,
+    -- Conversation state machine: GREET, CHATTING, ENROLL_COURSE, ENROLL_NAME,
+    -- ENROLL_EMAIL, ENROLL_PHONE, ENROLL_ADDRESS.
+    state text not null default 'GREET',
+    -- Fields captured mid-enrollment (course/name/email/phone/address), pushed
+    -- to the dashboard and cleared once the flow completes.
+    enrollment_draft jsonb not null default '{}'::jsonb,
     history jsonb not null default '[]'::jsonb,
     language text not null default 'en',
     pushed_to_dashboard boolean not null default false,
