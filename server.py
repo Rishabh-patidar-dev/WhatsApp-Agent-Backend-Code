@@ -1,4 +1,4 @@
-"""Cruz Roja WhatsApp Agent Backend Service (English)."""
+"""Cruz Roja WhatsApp Agent Backend Service."""
 import os
 import json
 import requests
@@ -33,6 +33,12 @@ if CHAT_PROVIDER == "claude":
 else:
     LLM = ("gemini", gemini_client)
 
+# Optional: push new leads to the Cruz Roja Dashboard. Skipped entirely if unset.
+DASHBOARD_URL = os.environ.get("DASHBOARD_URL", "").rstrip("/")
+INGEST_TOKEN = os.environ.get("INGEST_TOKEN", "")
+
+TRANSLATE_TRIGGER = "translate"
+
 app = FastAPI(title="Cruz Roja WhatsApp Agent")
 
 
@@ -52,8 +58,13 @@ async def receive_webhook(request: Request, bg: BackgroundTasks):
     try:
         entry = payload["entry"][0]["changes"][0]["value"]
         msg = entry["messages"][0]
+        contact_name = None
+        try:
+            contact_name = entry["contacts"][0]["profile"]["name"]
+        except (KeyError, IndexError):
+            pass
         if msg.get("type") == "text":
-            bg.add_task(process_message, msg["from"], msg["text"]["body"])
+            bg.add_task(process_message, msg["from"], msg["text"]["body"], contact_name)
     except (KeyError, IndexError):
         pass  # Event is a status update or non-text message; ignore
 
@@ -61,8 +72,25 @@ async def receive_webhook(request: Request, bg: BackgroundTasks):
 
 
 # 3. RAG Core Pipeline
-def process_message(from_phone: str, user_text: str):
-    lead = get_or_create_lead(from_phone)
+def process_message(from_phone: str, user_text: str, contact_name: str | None = None):
+    lead, is_new = get_or_create_lead(from_phone)
+    language = lead.get("language") or "en"
+
+    if is_new:
+        push_lead_to_dashboard(from_phone, contact_name, user_text, language)
+
+    # Language switch command — handled as a side effect, not a RAG query
+    if user_text.strip().lower() == TRANSLATE_TRIGGER:
+        new_language = "es" if language == "en" else "en"
+        set_lead_language(from_phone, new_language)
+        confirmation = (
+            "Idioma cambiado a español. ¿En qué puedo ayudarte?"
+            if new_language == "es"
+            else "Language switched to English. How can I help you?"
+        )
+        send_whatsapp_message(from_phone, confirmation)
+        return
+
     history = lead.get("history") or []
 
     # Generate query embedding
@@ -83,7 +111,7 @@ def process_message(from_phone: str, user_text: str):
         ).fetchall()
 
     context = "\n\n".join(f"[{m['title']}]\n{m['content']}" for m in matches)
-    reply = generate_llm_reply(user_text, context, history)
+    reply = generate_llm_reply(user_text, context, history, language)
 
     # Maintain conversation state (Keep up to 20 recent messages)
     history.extend([
@@ -95,14 +123,19 @@ def process_message(from_phone: str, user_text: str):
 
 
 # 4. Database Helper Functions
-def get_or_create_lead(phone: str) -> dict:
+def get_or_create_lead(phone: str) -> tuple[dict, bool]:
+    """Returns (lead, is_new). Atomic upsert — safe against Meta's duplicate webhook deliveries."""
     with psycopg.connect(DATABASE_URL, row_factory=dict_row, prepare_threshold=None) as conn:
-        row = conn.execute("SELECT * FROM leads WHERE phone = %s", (phone,)).fetchone()
+        row = conn.execute(
+            "INSERT INTO leads (phone) VALUES (%s) ON CONFLICT (phone) DO NOTHING RETURNING *",
+            (phone,)
+        ).fetchone()
         if row:
-            return row
-        conn.execute("INSERT INTO leads (phone) VALUES (%s)", (phone,))
+            conn.commit()
+            return row, True
+        row = conn.execute("SELECT * FROM leads WHERE phone = %s", (phone,)).fetchone()
         conn.commit()
-        return {"phone": phone, "history": []}
+        return row, False
 
 
 def save_lead_history(phone: str, history: list):
@@ -114,18 +147,44 @@ def save_lead_history(phone: str, history: list):
         conn.commit()
 
 
+def set_lead_language(phone: str, language: str):
+    with psycopg.connect(DATABASE_URL, prepare_threshold=None) as conn:
+        conn.execute(
+            "UPDATE leads SET language = %s, last_seen_at = NOW() WHERE phone = %s",
+            (language, phone)
+        )
+        conn.commit()
+
+
+def mark_lead_pushed(phone: str):
+    with psycopg.connect(DATABASE_URL, prepare_threshold=None) as conn:
+        conn.execute("UPDATE leads SET pushed_to_dashboard = TRUE WHERE phone = %s", (phone,))
+        conn.commit()
+
+
 # 5. LLM Prompting & Response Generation
-SYSTEM_PROMPT = """You are the official digital assistant for the Mexican Red Cross Training Coordination.
+SYSTEM_PROMPTS = {
+    "en": """You are the official digital assistant for the Mexican Red Cross Training Coordination.
 You ALWAYS respond in clear, helpful, and polite English, strictly within 2 to 4 sentences maximum (formatting for WhatsApp).
 
 RULES:
 - Base your answers strictly on the CONTEXT provided below. Do not make up prices, dates, or non-existent courses.
 - If the user wants to register or enroll, direct them to email cursos@cruzrojamexicana.org.mx or call 72 2335 6016.
 - If asked about something outside the catalog, share what information you do have and direct them to contact support.
-- If the request is a real emergency, instruct them immediately to call 911."""
+- If the request is a real emergency, instruct them immediately to call 911.""",
+    "es": """Eres el asistente digital oficial de la Coordinación de Capacitación de la Cruz Roja Mexicana.
+SIEMPRE respondes en español claro, útil y cortés, estrictamente en un máximo de 2 a 4 oraciones (formato para WhatsApp).
+
+REGLAS:
+- Basa tus respuestas estrictamente en el CONTEXTO proporcionado a continuación. No inventes precios, fechas ni cursos inexistentes.
+- Si el usuario desea registrarse o inscribirse, dirígelo al correo cursos@cruzrojamexicana.org.mx o al teléfono 72 2335 6016.
+- Si te preguntan algo fuera del catálogo, comparte la información que tengas y dirígelo a contactar soporte.
+- Si la solicitud es una emergencia real, indícale de inmediato que llame al 911.""",
+}
 
 
-def generate_llm_reply(user_msg: str, context: str, history: list) -> str:
+def generate_llm_reply(user_msg: str, context: str, history: list, language: str = "en") -> str:
+    system_prompt = SYSTEM_PROMPTS.get(language, SYSTEM_PROMPTS["en"])
     hist_text = "\n".join(
         f"{'User' if h['role'] == 'user' else 'Assistant'}: {h['text']}"
         for h in history[-6:]
@@ -141,7 +200,7 @@ def generate_llm_reply(user_msg: str, context: str, history: list) -> str:
         response = client.messages.create(
             model="claude-haiku-4-5",
             max_tokens=300,
-            system=SYSTEM_PROMPT,
+            system=system_prompt,
             messages=[{"role": "user", "content": prompt}],
         )
         return response.content[0].text.strip()
@@ -150,7 +209,7 @@ def generate_llm_reply(user_msg: str, context: str, history: list) -> str:
             model=GEMINI_CHAT_MODEL,
             contents=prompt,
             config=types.GenerateContentConfig(
-                system_instruction=SYSTEM_PROMPT,
+                system_instruction=system_prompt,
                 max_output_tokens=300,
             ),
         )
@@ -172,3 +231,33 @@ def send_whatsapp_message(to_phone: str, message_body: str):
     response = requests.post(META_API, headers=headers, json=payload, timeout=10)
     if not response.ok:
         print(f"[ERROR] Failed to send WhatsApp message: {response.status_code} {response.text}")
+
+
+# 7. Dashboard Lead Push (Cruz Roja Records Dashboard)
+def push_lead_to_dashboard(phone: str, name: str | None, first_message: str, language: str):
+    if not DASHBOARD_URL or not INGEST_TOKEN:
+        return  # Dashboard integration not configured — skip silently
+
+    comment = (
+        f"WhatsApp inquiry via Cruz Roja Agent. First message: \"{first_message}\". "
+        f"Preferred language: {language}."
+    )[:2000]
+
+    payload = {
+        "name": name or "WhatsApp Lead",
+        "phone": phone,
+        "comment": comment,
+    }
+    try:
+        response = requests.post(
+            f"{DASHBOARD_URL}/api/public/leads",
+            headers={"x-ingest-token": INGEST_TOKEN, "Content-Type": "application/json"},
+            json=payload,
+            timeout=10,
+        )
+        if not response.ok:
+            print(f"[ERROR] Failed to push lead to dashboard: {response.status_code} {response.text}")
+    except requests.RequestException as e:
+        print(f"[ERROR] Dashboard push request failed: {e}")
+    finally:
+        mark_lead_pushed(phone)

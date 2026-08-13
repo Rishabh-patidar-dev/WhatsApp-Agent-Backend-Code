@@ -14,6 +14,8 @@ create table if not exists course_chunks (
 create table if not exists leads (
     phone text primary key,
     history jsonb not null default '[]'::jsonb,
+    language text not null default 'en',
+    pushed_to_dashboard boolean not null default false,
     created_at timestamptz not null default now(),
     last_seen_at timestamptz not null default now()
 );

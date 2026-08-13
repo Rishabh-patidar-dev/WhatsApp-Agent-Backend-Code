@@ -1,0 +1,350 @@
+{
+  "meta": {
+    "generated_for": "AI agent context",
+    "extraction_date": "2026-08-13",
+    "language_note": "This file is an English translation of the original Spanish-language source content. All names, descriptions and objectives were translated; URLs, prices, codes and provider names were left unchanged.",
+    "sources": [
+      {
+        "site": "Cruz Roja Mexicana CDMX-EDOMEX (institutional site)",
+        "base_url": "https://cruzrojacdmx-edomex.org/",
+        "training_page": "https://cruzrojacdmx-edomex.org/capacitacion/"
+      },
+      {
+        "site": "Cruz Roja CECEM (training/school LMS site - LearnWorlds)",
+        "base_url": "https://www.cruzrojacecem.com/home"
+      },
+      {
+        "site": "Cruz Roja CECEM Store (Shopify e-commerce store - course purchasing)",
+        "base_url": "https://tienda.cruzrojacecem.com/",
+        "note": "Actual prices, stock status and providers for all courses are listed here. Currency MXN. 66 total products across 3 pages."
+      }
+    ],
+    "currency": "MXN",
+    "disclaimer": "Extracted from publicly rendered page content on the dates above. Prices, availability ('Agotado' = sold out) and offers change frequently; verify against the live site before quoting to end users."
+  },
+
+  "organization": {
+    "name": "Mexican Red Cross (Cruz Roja Mexicana)",
+    "region": "Mexico City (CDMX) and State of Mexico (EDOMEX)",
+    "training_division": "CECEM - State Training Coordination of the Mexican Red Cross, State of Mexico",
+    "emergency_phone": "911",
+    "emergency_urgent_care_phone": "5553951111",
+    "training_contact_whatsapp": "https://wa.me/5550882353",
+    "store_contact_email": "tienda@cruzrojacecem.com",
+    "school_contact_phone": "55.5088.2352",
+    "address": "Av. Norteamerica Manzana 062, Las Americas, 53030 Naucalpan de Juárez, Méx.",
+    "social_media": {
+      "instagram": "https://www.instagram.com/cruzroja_edomex/",
+      "facebook": "https://www.facebook.com/cruzrojaem/",
+      "x": "https://x.com/CruzRoja_Edomex",
+      "linkedin": "https://www.linkedin.com/company/cruz-roja-mexicana-estado-de-m%C3%A9xico",
+      "cecem_facebook": "https://www.facebook.com/CruzRojaCECEM/",
+      "cecem_instagram": "https://www.instagram.com/cruzrojacecem/",
+      "cecem_youtube": "https://www.youtube.com/c/CruzRojaCECEM"
+    }
+  },
+
+  "membership_product": {
+    "name": "CR Contigo",
+    "description": "A membership with a social cause that provides Red Cross health services, assistance, and benefits for the member and their family.",
+    "purchase_url": "https://crcontigo.mx/home",
+    "plans": [
+      {
+        "plan_name": "Individual Plan",
+        "most_popular": true,
+        "billing_unit": "per person, unlimited family members",
+        "price": "998 MXN/year",
+        "price_equivalent": "83 MXN/month",
+        "notes": "VAT included",
+        "benefits": [
+          "Unlimited ground ambulance events",
+          "20% discount on medical consultations",
+          "Preferential rates on Lab, X-Ray, and CT scan services",
+          "10% discount on surgical packages",
+          "Digital membership, immediate activation",
+          "Coverage throughout EDOMEX and CDMX"
+        ],
+        "preferred_ambulance_rates": [
+          {"service": "Emergency medical transport", "price": "2600 MXN"},
+          {"service": "Basic life support transport", "price": "2200 MXN"},
+          {"service": "Intermediate life support transport", "price": "4900 MXN"},
+          {"service": "Intensive care transport", "price": "5950 MXN"}
+        ],
+        "coverage_note": "Includes a trip of up to 20 km from the pickup point to the destination hospital."
+      },
+      {
+        "plan_name": "Business Plan",
+        "billing_unit": "per employee, VAT included",
+        "minimum": "10 employees",
+        "benefits": [
+          "Digital memberships for all employees",
+          "Prehospital transport for the employee and family",
+          "Discounts on Red Cross hospital services",
+          "Tax-deductible agreement",
+          "Internal communication support for activation",
+          "Coverage throughout EDOMEX and CDMX"
+        ]
+      }
+    ]
+  },
+
+  "paramedic_training_program": {
+    "name": "Diploma in Prehospital Medical Care (DAMP)",
+    "levels": [
+      {
+        "level": "Basic Level (DAMP-B)",
+        "target_audience": "New entrants to Prehospital Medical Care",
+        "enroll_url": "https://www.cruzrojacecem.com/damp-b",
+        "packages": [
+          {
+            "package_name": "Package 1",
+            "includes": [
+              "Ambulance practice sessions",
+              "Operational radio communication",
+              "Advanced clinical simulation",
+              "First Responder Course",
+              "Mexican Red Cross certificate",
+              "Occupational competency assessment (Red CONOCER)",
+              "Other international certifications"
+            ]
+          },
+          {
+            "package_name": "Package 2",
+            "includes": [
+              "Ambulance practice sessions",
+              "Operational radio communication",
+              "Advanced clinical simulation",
+              "First Responder Course",
+              "Mexican Red Cross certificate",
+              "Occupational competency assessment (Red CONOCER)",
+              "Other international certifications",
+              "STOP THE BLEED international certification"
+            ]
+          },
+          {
+            "package_name": "Package 3",
+            "includes": [
+              "Ambulance practice sessions",
+              "Operational radio communication",
+              "Advanced clinical simulation",
+              "First Responder Course",
+              "Mexican Red Cross certificate",
+              "Occupational competency assessment (Red CONOCER)",
+              "Other international certifications",
+              "STOP THE BLEED international certification",
+              "Basic Life Support (BLS) international certification, endorsed by the American Heart Association (AHA)"
+            ]
+          },
+          {
+            "package_name": "Package 4",
+            "includes": [
+              "Ambulance practice sessions",
+              "Operational radio communication",
+              "Advanced clinical simulation",
+              "First Responder Course",
+              "Mexican Red Cross certificate",
+              "Occupational competency assessment (Red CONOCER)",
+              "Other international certifications",
+              "STOP THE BLEED international certification",
+              "Basic Life Support (BLS) international certification, endorsed by the American Heart Association (AHA)",
+              "Training at the Mexican Red Cross National Training Center (CENCAD)"
+            ]
+          }
+        ]
+      },
+      {
+        "level": "Advanced Level (DAMP-A)",
+        "target_audience": "Paramedics who want to take their training to the next level",
+        "info_url": "https://www.cruzrojacecem.com/damp-a"
+      }
+    ]
+  },
+
+  "nursing_program": {
+    "name": "Technical Baccalaureate in General Nursing",
+    "description": "A dual-purpose upper-secondary education institution. Constructivist, student-centered educational model. Lasts six semesters, integrating scientific, clinical, and humanistic training.",
+    "components": [
+      "Academic training in Technical Nursing Baccalaureate",
+      "Clinical and community practicum",
+      "Training in first aid and basic care",
+      "Human development and holistic education programs"
+    ],
+    "contact_locations": [
+      {"location": "Naucalpan", "email": "d.naucalpan.enf@cruzrojacecem.com"},
+      {"location": "Ecatepec", "email": "d.ecatepec.enf@cruzrojacecem.com"}
+    ]
+  },
+
+  "diplomas": [
+    {
+      "name": "Diploma in Physical Therapy for the Hospitalized Patient",
+      "academic_endorsement": "National Autonomous University of Mexico (UNAM)",
+      "objective": "Upon completion, the physical therapist will be able to design an evaluation, diagnosis, and intervention model integrated into the multidisciplinary care of the hospitalized patient, based on up-to-date scientific evidence and national and international clinical practice guidelines.",
+      "info_url": "https://www.cruzrojacecem.com/course/diplomado-de-fisioterapia-en-el-paciente-hospitalizado",
+      "purchase_url": "https://tienda.cruzrojacecem.com/products/inscripcion-diplomado-fisioterapia-en-el-paciente-hospitalizado",
+      "enrollment_price": "3000 MXN",
+      "monthly_price": "Starting at 3000 MXN"
+    },
+    {
+      "name": "Diploma in Psychosocial Support in Medical Emergencies and Disasters",
+      "objective": "Upon completion, the participant will be able to design a psychosocial evaluation and intervention model for emergency and disaster situations, promoting emotional well-being, self-care, and resilience.",
+      "purchase_url": "https://tienda.cruzrojacecem.com/products/diplomado-en-apoyo-psicosocial-en-emergencias-medicas-y-desastres",
+      "enrollment_price": "2000 MXN",
+      "monthly_price": "2500 MXN"
+    },
+    {
+      "name": "Diploma in Respiratory Physical Therapy",
+      "description": "Learn physiotherapeutic intervention techniques for patients with respiratory diagnoses and complications.",
+      "info_url": "https://www.cruzrojacecem.com/course/fisioterapia-respiratoria",
+      "purchase_url": "https://tienda.cruzrojacecem.com/products/inscripcion-diplomado-fisioterapia-respiratoria",
+      "enrollment_price": "3000 MXN",
+      "monthly_price": "3000 MXN"
+    }
+  ],
+
+  "red_conocer_certifications": [
+    {
+      "code": "EC 307.01",
+      "name": "Basic Prehospital Care",
+      "objective": "Evaluate and certify people who provide basic prehospital care (emergency medical care, transport, and patient handoff).",
+      "price": "3200 MXN",
+      "list_price": "3500 MXN",
+      "on_offer": true,
+      "purchase_url": "https://tienda.cruzrojacecem.com/products/certificacion-red-conocer"
+    },
+    {
+      "code": "EC 1371",
+      "name": "First Aid",
+      "objective": "Serve as a benchmark for the evaluation and certification of people who provide first-aid care.",
+      "price": "3200 MXN",
+      "list_price": "3500 MXN",
+      "on_offer": true,
+      "purchase_url": "https://tienda.cruzrojacecem.com/products/certificacion-red-conocer-ec-1371-primeros-auxilios"
+    }
+  ],
+
+  "certificate_renewal_programs": {
+    "points_based_renewal": {
+      "state_level": {
+        "description": "Renew by accumulating points through courses taken within EDOMEX and Mexico City.",
+        "points_required": {"basic": 60, "advanced": 100}
+      },
+      "national_level": {
+        "description": "Renewal follows nationally established guidelines through the accumulation of points earned in courses.",
+        "points_required": {"basic": 60, "advanced": 100},
+        "points_table_url": "https://drive.google.com/file/d/1qhSkZS2jQ8j5-BNhGTz9o35NwXdCg5SD/view?usp=sharing"
+      }
+    },
+    "certifications_platform_url": "https://certificaciones.cruzrojacecem.com/login",
+    "state_update_program": [
+      {
+        "level": "Basic Level",
+        "target_audience": "People who need to update or regularize their basic-level certificate",
+        "duration": "Up to 6 months, self-paced",
+        "modality": "100% online",
+        "start_dates": "No fixed dates, can start immediately"
+      },
+      {
+        "level": "Advanced Level",
+        "target_audience": "People who want to update or strengthen their advanced-level certificate",
+        "duration": "Flexible, self-paced",
+        "modality": "100% online, unlimited access",
+        "start_dates": "No fixed dates, can start immediately"
+      }
+    ]
+  },
+
+  "courses": [
+    {"category": "Courses for Health Professionals", "name": "Advanced Cardiovascular Life Support (ACLS)", "provider": "AHA", "objective": "Provide knowledge of the main cardiovascular pathologies and advanced resuscitation management: advanced airway management, CPR, high-performance teams, arrhythmia interpretation, and electrical and pharmacological therapy.", "affiliation_note": "Cruz Roja EDOMEX is a training site affiliated with CEI Asesores en Emergencias y Desastres. TS59404", "price": "2900 MXN", "list_price": "3000 MXN", "on_offer": true, "in_stock": true, "purchase_url": "https://tienda.cruzrojacecem.com/products/advanced-cardiovascular-life-support-acls"},
+    {"category": "Courses for Health Professionals", "name": "Pediatric Advanced Life Support (PALS)", "provider": "AHA", "objective": "Learn to perform a systematic evaluation of the pediatric patient using the pediatric assessment triangle to make differential diagnoses of potential causes of emergency in these patients.", "price": "3850 MXN", "list_price": "4000 MXN", "on_offer": true, "in_stock": false, "purchase_url": "https://tienda.cruzrojacecem.com/products/pediatric-advanced-life-support-pals"},
+    {"category": "Courses for Health Professionals", "name": "Basic Life Support (BLS)", "provider": "AHA", "objective": "Get certified in identifying cardiorespiratory arrest and performing high-quality CPR for adults, children, and infants.", "affiliation_note": "The Mexican Red Cross EDOMEX Training Site is affiliated with CEI Asesores en Emergencias y Desastres (TS59404).", "price": "1900 MXN", "in_stock": true, "purchase_url": "https://tienda.cruzrojacecem.com/products/basic-life-support-bls"},
+    {"category": "Courses for Health Professionals", "name": "Emergency Pediatric Care (EPC) 4th ed.", "provider": "NAEMT", "objective": "Give prehospital health professionals the knowledge and skills needed to effectively assess and manage pediatric patients in emergency situations.", "price": "2650 MXN", "in_stock": false, "purchase_url": "https://tienda.cruzrojacecem.com/products/emergency-pediatric-care-epc-4ed"},
+    {"category": "Courses for Health Professionals", "name": "Advanced Medical Life Support (AMLS)", "provider": "NAEMT", "objective": "Develop the skills to care for patients with clinical emergencies to the highest educational standard for assessment and treatment.", "price": "2000 MXN", "in_stock": true, "purchase_url": "https://tienda.cruzrojacecem.com/products/advanced-medical-life-support-amls"},
+    {"category": "Courses for Health Professionals", "name": "Emergency Vehicle Operator Course (COVE)", "provider": "CECEM", "objective": "Provide participants with knowledge of the safety and correct execution of a high-angle rescue or its evacuation.", "purchase_url": "https://tienda.cruzrojacecem.com/products/curso-operador-de-vehiculos-de-emergencias-cove"},
+    {"category": "Courses for Health Professionals", "name": "EMS Vehicle Operator Safety (EVOS)", "objective": "Addresses the knowledge gap that leads to injuries and deaths, focusing on the specific behaviors that must change to create a culture of safe driving.", "purchase_url": "https://tienda.cruzrojacecem.com/products/ems-vehicle-operator-safety-evos"},
+    {"category": "Courses for Health Professionals", "name": "Vertical Rescue Specialist", "provider": "ENDE", "objective": "The participant will be able to implement mechanical advantage systems, tripod use, and zip-line/rescue-line rigging, among many other techniques.", "price": "3500 MXN", "in_stock": false, "purchase_url": "https://tienda.cruzrojacecem.com/products/especialista-en-rescate-vertical"},
+    {"category": "Courses for Health Professionals", "name": "Fundamental Critical Care Support (FCCS)", "provider": "Cruz Roja CECEM", "objective": "Prioritize the assessment needs of the critically ill patient, select appropriate diagnostic tests, identify and respond to significant changes in the unstable patient, recognize and initiate management of life-threatening acute conditions, and determine the need for specialist consultation.", "price": "5800 MXN", "in_stock": true, "purchase_url": "https://tienda.cruzrojacecem.com/products/fundamentos-de-cuidados-criticos-en-soporte-inicial-fccs"},
+    {"category": "Courses for Health Professionals", "name": "Professional Lifeguard for Pools and Water Parks", "provider": "ENDE", "objective": "The participant will gain the knowledge needed to become a professional lifeguard.", "price": "2600 MXN", "in_stock": false, "purchase_url": "https://tienda.cruzrojacecem.com/products/guardavidas-profesional-de-albercas-y-parques-acuaticos"},
+    {"category": "Courses for Health Professionals", "name": "Professional Open Water Lifeguard (GPAA)", "provider": "ENDE", "objective": "Provide participants with the knowledge and skills needed to approach and rescue patients in an aquatic environment.", "price": "2500 MXN", "in_stock": false, "purchase_url": "https://tienda.cruzrojacecem.com/products/guardavidas-profesional-en-aguas-abiertas-gpaa"},
+    {"category": "Courses for Health Professionals", "name": "HeartCode BLS and/or ACLS", "provider": "AHA", "objective": "Offers flexible, efficient training for health professionals who need to renew their credentials.", "price": "Starting at 2900 MXN", "in_stock": true, "purchase_url": "https://tienda.cruzrojacecem.com/products/aha-rqi"},
+    {"category": "Courses for Health Professionals", "name": "Selective Movement Restriction / Selective Immobilization", "provider": "CECEM", "objective": "Provide the participant with the tools to apply and execute selective spinal immobilization and/or spinal movement restriction algorithms based on scientific evidence, patient assessment, and critical-thinking decision-making.", "price": "790 MXN", "in_stock": true, "purchase_url": "https://tienda.cruzrojacecem.com/products/restriccion-del-movimiento-espinal"},
+    {"category": "Courses for Health Professionals", "name": "Comprehensive Airway Management", "provider": "CECEM", "objective": "Provide evidence-based tools for comprehensive airway management in the prehospital setting and the care of the main pathologies that can affect gas exchange at any level.", "price": "800 MXN", "in_stock": false, "purchase_url": "https://tienda.cruzrojacecem.com/products/manejo-integral-de-la-via-aerea"},
+    {"category": "Courses for Health Professionals", "name": "Comprehensive Management of the Burn Patient", "provider": "CECEM", "objective": "Provide emergency medical technicians with an update on prehospital management of the burn patient, with an emphasis on airway interventions, intravenous fluid management, and thermal control.", "price": "600 MXN", "in_stock": true, "purchase_url": "https://tienda.cruzrojacecem.com/products/atencion-integral-del-paciente-quemado"},
+    {"category": "Courses for Health Professionals", "name": "Neonatal Resuscitation Program (NRP)", "provider": "Cruz Roja CECEM", "objective": "Train health professionals in the comprehensive management of newborns who require life support in the first minutes of life.", "price": "5500 MXN", "list_price": "5200 MXN", "in_stock": true, "purchase_url": "https://tienda.cruzrojacecem.com/products/reanimacion-neonatal"},
+    {"category": "Courses for Health Professionals", "name": "Instructor Training Program", "provider": "CECEM", "objective": "CECEM offers this instructor training program.", "price": "450 MXN", "in_stock": true, "purchase_url": "https://tienda.cruzrojacecem.com/products/programa-de-formacion-de-instructores"},
+    {"category": "Courses for Health Professionals", "name": "NAEMT Retake/Makeup", "description": "Payment for taking a makeup evaluation on a date other than the original course date.", "provider": "AHA", "price": "Starting at 200 MXN", "purchase_url": "https://tienda.cruzrojacecem.com/products/recuperacion-naemt"},
+    {"category": "Courses for Health Professionals", "name": "AHA Rescheduling", "description": "Payment for rescheduling an AHA course.", "provider": "AHA", "price": "Starting at 800 MXN", "purchase_url": "https://tienda.cruzrojacecem.com/products/reprogramacion-aha"},
+    {"category": "Courses for Health Professionals", "name": "Stop The Bleed", "provider": "OTRO", "objective": "Learn about the types of hemorrhage and techniques to stop them: direct pressure, pressure bandaging, wound packing, Israeli bandages, hemostatic agents, and tourniquets.", "price": "400 MXN", "in_stock": false, "purchase_url": "https://tienda.cruzrojacecem.com/products/stop-the-bleed"},
+    {"category": "Courses for Health Professionals", "name": "Vehicle Extraction Technician (TEV)", "objective": "Provide participants with knowledge of the safety and correct execution of a vehicle rescue in the safest and most effective way, according to the characteristics of the entrapment type.", "purchase_url": "https://tienda.cruzrojacecem.com/products/tecnico-en-extraccion-vehicular-tev"},
+    {"category": "Courses for Health Professionals", "name": "Intravenous Therapy", "objective": "Use evidence-based medicine to update the treatment used by prehospital personnel, along with the benefits, goals, and consequences of intravenous solutions.", "purchase_url": "https://tienda.cruzrojacecem.com/products/fluidoterapia-basica"},
+    {"category": "Courses for Health Professionals", "name": "TRIAGE and Mass Casualty Management", "provider": "ENDE", "objective": "Train professionals to effectively manage mass-casualty emergencies, equipping them with skills to rapidly triage the injured.", "price": "2200 MXN", "in_stock": false, "purchase_url": "https://tienda.cruzrojacecem.com/products/triage-y-manejo-de-multiples-victimas"},
+    {"category": "Courses for Health Professionals", "name": "Prehospital Ultrasound / Ultrasound-Guided Vascular Access", "provider": "CECEM", "objective": "Incorporate the use of ultrasound as a rapid diagnostic tool in the prehospital setting.", "price": "800 MXN", "in_stock": false, "purchase_url": "https://tienda.cruzrojacecem.com/products/accesos-vasculares-ecoguiados"},
+    {"category": "Courses for Health Professionals", "name": "Clinical Emergencies", "provider": "CECEM", "objective": "Identify the main updates in the identification and treatment of the various clinical emergencies a health professional may encounter.", "price": "800 MXN", "in_stock": false, "purchase_url": "https://tienda.cruzrojacecem.com/products/manejo-de-urgencias-clinicas"},
+    {"category": "Courses for Health Professionals", "name": "Cardiovascular Emergency Management", "provider": "LearnWorlds", "price": "450 MXN", "in_stock": true, "purchase_url": "https://tienda.cruzrojacecem.com/products/manejo-de-urgencias-cardiovasculares"},
+    {"category": "Courses for Health Professionals", "name": "Obstetric Emergencies", "provider": "CECEM", "objective": "Implement care techniques for gyneco-obstetric patients in emergency situations: diagnosis, treatment, and referral criteria according to current national and international standards.", "price": "800 MXN", "in_stock": true, "purchase_url": "https://tienda.cruzrojacecem.com/products/atencion-al-parto-y-emergencias-obstetricas"},
+    {"category": "Courses for Health Professionals", "name": "Pediatric Emergencies", "provider": "Cruz Roja CECEM", "price": "800 MXN", "in_stock": true, "purchase_url": "https://tienda.cruzrojacecem.com/products/urgencias-pediatricas"},
+    {"category": "Courses for Health Professionals", "name": "Trauma Emergencies", "provider": "ADIEL", "objective": "Update and standardize the approach used by emergency medical professionals to manage the trauma victim, strengthening the development of life-saving skills.", "price": "700 MXN", "in_stock": true, "purchase_url": "https://tienda.cruzrojacecem.com/products/urgencias-traumatol-gicas"},
+    {"category": "Courses for Health Professionals", "name": "Non-Invasive Mechanical Ventilation", "provider": "CECEM", "objective": "Learn to identify the indications, contraindications, and benefits of NIMV, and to select, adjust, and monitor basic ventilation parameters using modern devices and updated protocols.", "price": "850 MXN", "in_stock": true, "purchase_url": "https://tienda.cruzrojacecem.com/products/atencion-prehospitalaria-en-covid-19"},
+    {"category": "Courses for Health Professionals", "name": "Prehospital Trauma Life Support (PHTLS) 10th ed.", "provider": "NAEMT", "price": "2600 MXN", "in_stock": true, "purchase_url": "https://tienda.cruzrojacecem.com/products/prehospital-trauma-life-support-phtls"},
+    {"category": "Courses for Health Professionals", "name": "Geriatric Education for EMS (GEMS)", "provider": "NAEMT", "price": "2000 MXN", "in_stock": true, "purchase_url": "https://tienda.cruzrojacecem.com/products/geriatric-education-for-ems-gems"},
+    {"category": "Courses for Health Professionals", "name": "Clinical Pharmacology", "provider": "CECEM", "price": "700 MXN", "in_stock": true, "purchase_url": "https://tienda.cruzrojacecem.com/products/introduccion-al-manejo-farmacologico"},
+    {"category": "Courses for Health Professionals", "name": "Advanced Electrocardiography", "provider": "CECEM", "price": "750 MXN", "in_stock": false, "purchase_url": "https://tienda.cruzrojacecem.com/products/electrocardiografia-avanzada"},
+    {"category": "Courses for Health Professionals", "name": "Advanced Electrocardiography (LearnWorlds/online version)", "provider": "LearnWorlds", "price": "12000 MXN", "in_stock": true, "purchase_url": "https://tienda.cruzrojacecem.com/products/electrocardiografia-avanzada-1"},
+    {"category": "Courses for Health Professionals", "name": "Basic Electrocardiography", "provider": "CECEM", "price": "650 MXN", "in_stock": true, "purchase_url": "https://tienda.cruzrojacecem.com/products/electrocardiografia-basica"},
+    {"category": "Courses for Health Professionals", "name": "Basic Electrocardiography Online", "provider": "LearnWorlds", "price": "500 MXN", "list_price": "650 MXN", "on_offer": true, "in_stock": true, "purchase_url": "https://tienda.cruzrojacecem.com/products/ekg-basica"},
+    {"category": "Courses for Health Professionals", "name": "Management of the Neurocritical Patient", "provider": "CECEM", "price": "800 MXN", "in_stock": true, "purchase_url": "https://tienda.cruzrojacecem.com/products/manejo-del-paciente-neurocritico"},
+    {"category": "Courses for Health Professionals", "name": "Intraosseous Access", "provider": "CECEM", "price": "600 MXN", "in_stock": true, "purchase_url": "https://tienda.cruzrojacecem.com/products/accesos-intraoseos"},
+    {"category": "Courses for Health Professionals", "name": "Emergency Cartography (Mapping & Orientation)", "provider": "ENDE", "price": "1500 MXN", "in_stock": true, "purchase_url": "https://tienda.cruzrojacecem.com/products/cartografia-y-orientacion"},
+    {"category": "Courses for Health Professionals", "name": "Vertical Rescue - Operations Level", "provider": "ENDE", "price": "3000 MXN", "in_stock": true, "purchase_url": "https://tienda.cruzrojacecem.com/products/rescate-vertical-nivel-operaciones"},
+    {"category": "Courses for Health Professionals", "name": "Wilderness Rescue (monthly payment)", "provider": "AHA", "price": "Starting at 600 MXN", "in_stock": true, "purchase_url": "https://tienda.cruzrojacecem.com/products/rescate-en-zonas-agrestes"},
+    {"category": "Courses for Health Professionals", "name": "Prehospital Clinical Simulation", "provider": "Cruz Roja CECEM", "price": "750 MXN", "in_stock": false, "purchase_url": "https://tienda.cruzrojacecem.com/products/simulacion-clinica-en-prehospital"},
+    {"category": "Courses for Health Professionals", "name": "Vital Signs Measurement", "provider": "CECEM", "price": "485 MXN", "in_stock": true, "purchase_url": "https://tienda.cruzrojacecem.com/products/toma-de-signos-vitales"},
+    {"category": "Courses for Health Professionals", "name": "Cardiopulmonary Resuscitation and Airway Obstruction Relief", "provider": "CECEM", "price": "580 MXN", "in_stock": true, "purchase_url": "https://tienda.cruzrojacecem.com/products/reanimacion-cardiopulmonar-y-desobstruccion-de-la-via-aerea"},
+
+    {"category": "Courses for the General Public", "name": "Act in Time: Learn to Save a Life", "provider": "CECEM", "description": "Would you know what to do in a medical emergency at home, school, or on the street? This workshop is designed to give you the basic tools that can make the difference while professional help arrives.", "price": "150 MXN", "in_stock": true, "purchase_url": "https://tienda.cruzrojacecem.com/products/actua-a-tiempo-aprende-a-salvar-una-vida"},
+    {"category": "Courses for the General Public", "name": "Home Patient Care: Medication Administration and Home Adaptations", "provider": "CECEM", "description": "Aimed at people who need knowledge about the adaptations needed to care for sick family members at home: recommendations for improving mobility and preventing injuries and other adverse conditions.", "price": "580 MXN", "in_stock": true, "purchase_url": "https://tienda.cruzrojacecem.com/products/cuidados-en-el-hogar-curaciones-vendajes-e-inyecciones"},
+    {"category": "Courses for the General Public", "name": "Stretcher-Bearer Training. Safety in Patient Transport and Mobilization", "provider": "CECEM", "description": "Learn the principles of safe patient mobilization (mobile devices, wheelchairs, stretchers) and transfer/mobilization techniques for diagnostic studies within hospital units.", "price": "1500 MXN", "in_stock": true, "purchase_url": "https://tienda.cruzrojacecem.com/products/formacion-de-camilleros-seguridad-en-el-traslado-y-movilizacion-del-paciente"},
+    {"category": "Courses for the General Public", "name": "Introduction to the Mexican Red Cross", "provider": "CECEM", "description": "Expand your knowledge of the institution's doctrine.", "price": "0 MXN", "in_stock": true, "purchase_url": "https://tienda.cruzrojacecem.com/products/induccion-a-la-cruz-roja-mexicana"},
+    {"category": "Courses for the General Public", "name": "Wound Cleaning and Treatment", "provider": "CECEM", "description": "Learn the principles of identifying contaminated wounds and their proper disinfection and cleaning.", "price": "425 MXN", "in_stock": true, "purchase_url": "https://tienda.cruzrojacecem.com/products/tecnicas-de-asepsia-y-antisepsia"},
+    {"category": "Courses for the General Public", "name": "First Aid (First Responder, 8 hrs)", "provider": "CECEM", "description": "Designed for people who are not health professionals, to give them a first introduction to actions they can take to save the life of an injured or ill person.", "price": "755 MXN", "list_price": "1000 MXN", "on_offer": true, "in_stock": true, "purchase_url": "https://tienda.cruzrojacecem.com/products/primer-respondiente-en-primeros-auxilios-8-hrs"},
+    {"category": "Courses for the General Public", "name": "Pet First Aid", "provider": "Cruz Roja CECEM", "price": "1350 MXN", "in_stock": true, "purchase_url": "https://tienda.cruzrojacecem.com/products/primeros-auxilios-de-mascotas"},
+    {"category": "Courses for the General Public", "name": "Sports First Aid", "provider": "CECEM", "price": "1100 MXN", "in_stock": false, "purchase_url": "https://tienda.cruzrojacecem.com/products/primeros-auxilios-en-el-deporte"},
+    {"category": "Courses for the General Public", "name": "Pediatric First Aid", "provider": "CECEM", "price": "645 MXN", "in_stock": true, "purchase_url": "https://tienda.cruzrojacecem.com/products/primeros-auxilios-pediatricos"},
+
+    {"category": "Continuing Education", "name": "State Basic-Level Training/Update Program (PEAB)", "provider": "CECEM-LW", "description": "100% online program; once purchased, access is granted to the site's asynchronous classes and reference materials, with access for 6 months. There are NO start dates, it can be started at any time.", "price": "1600 MXN", "list_price": "2250 MXN", "on_offer": true, "in_stock": true, "enroll_url": "https://www.cruzrojacecem.com/course/peab", "purchase_url": "https://tienda.cruzrojacecem.com/products/programa-estatal-de-actualizacion-nivel-basico-peab"},
+    {"category": "Continuing Education", "name": "State Basic-Level Update Program (PEAB) - Add-ons", "provider": "Cruz Roja CECEM", "price": "Starting at 160 MXN", "purchase_url": "https://tienda.cruzrojacecem.com/products/programa-estatal-de-actualizacion-basico"},
+    {"category": "Continuing Education / Administrative", "name": "CECEM Certificates", "provider": "Cruz Roja CECEM", "description": "Pay for the certificate you wish to request and submit the request for issuance. For National Certificates, contact c.escolar@cruzrojacecem.com", "price": "100 MXN", "in_stock": true, "purchase_url": "https://tienda.cruzrojacecem.com/products/constancias-cecem"},
+    {"category": "Administrative", "name": "Course Supplemental Payment", "provider": "Cruz Roja CECEM", "price": "1600 MXN", "purchase_url": "https://tienda.cruzrojacecem.com/products/pago-complementario-cursos-aha"},
+    {"category": "Administrative", "name": "Thesis/Capstone Advisory", "provider": "AHA", "price": "300 MXN", "in_stock": true, "purchase_url": "https://tienda.cruzrojacecem.com/products/asesoria-tesina"},
+    {"category": "Youth", "name": "State Youth Camp \"Little Cowboys, Great Heroes\"", "provider": "Cruz Roja CECEM", "price": "1370 MXN", "in_stock": false, "purchase_url": "https://tienda.cruzrojacecem.com/products/campamento-estatal-de-juventud-pequenos-vaqueros-grandes-heroes"},
+    {"category": "Diplomas (monthly payments)", "name": "Monthly Payment - Diploma in Psychosocial Support in Medical Emergencies and Disasters", "provider": "Cruz Roja CECEM", "price": "2500 MXN", "purchase_url": "https://tienda.cruzrojacecem.com/products/mensualidad-diplomado-de-apoyo-psicosocial-en-emergencias-medicas-y-desastres"},
+    {"category": "Diplomas (monthly payments)", "name": "Monthly Payment - Diploma in Physical Therapy for the Hospitalized Patient", "provider": "Cruz Roja CECEM", "price": "Starting at 3000 MXN", "purchase_url": "https://tienda.cruzrojacecem.com/products/inscripcion-diplomado-fisioterapia-en-el-paciente-hospitalizado-mensualidad"},
+    {"category": "Diplomas (monthly payments)", "name": "Monthly Payment - Diploma in Respiratory Physical Therapy", "provider": "Cruz Roja CECEM", "price": "3000 MXN", "purchase_url": "https://tienda.cruzrojacecem.com/products/mensualidad-diplomado-de-fisioterapia-respiratoria"}
+  ],
+
+  "store_taxonomy": {
+    "note": "Categories as filterable on the Shopify store (tienda.cruzrojacecem.com)",
+    "collections": [
+      {"name": "Courses for Health Professionals", "url": "https://tienda.cruzrojacecem.com/collections/cursos-para-profesionales-de-la-salud", "sub_providers": ["CECEM", "AHA", "NAEMT", "ADIEL", "ENDE"]},
+      {"name": "Courses for the General Public", "url": "https://tienda.cruzrojacecem.com/collections/cursos-para-poblacion-en-general"},
+      {"name": "Courses for Red Cross Personnel", "url": "https://tienda.cruzrojacecem.com/collections/cursos-para-personal-de-cruz-roja"},
+      {"name": "All Products", "url": "https://tienda.cruzrojacecem.com/collections/all"}
+    ],
+    "provider_counts": {"AHA": 5, "CECEM": 36, "NAEMT": 4, "ENDE": 5, "OTRO": 6},
+    "total_products_in_store": 66,
+    "in_stock_count": 51,
+    "sold_out_count": 26,
+    "max_price_seen": "12000 MXN"
+  },
+
+  "hospital_services": {
+    "note": "Not courses, but related medical services offered by the institutional site — included in case the agent needs organizational context.",
+    "phone": "5553951111",
+    "services": [
+      "Laboratory", "X-Ray", "CT Scan (Tomography)", "Medical Consultation", "Rehabilitation",
+      "Emergency Room", "Surgery", "Internal Medicine (Cardiology, Nephrology)",
+      "24/7 Medical Emergencies", "Traumatology and Orthopedics", "Mental Health", "Blood Bank",
+      "Unit Rental for Events (ambulances and paramedic staff)", "Scheduled Transfers"
+    ]
+  }
+}
