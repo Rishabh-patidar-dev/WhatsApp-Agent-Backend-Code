@@ -306,9 +306,12 @@ def set_enrollment_draft(phone: str, draft: dict):
         conn.commit()
 
 
-def mark_lead_pushed(phone: str):
+def mark_lead_pushed(phone: str, error: str | None = None):
     with psycopg.connect(DATABASE_URL, prepare_threshold=None) as conn:
-        conn.execute("UPDATE leads SET pushed_to_dashboard = TRUE WHERE phone = %s", (phone,))
+        conn.execute(
+            "UPDATE leads SET pushed_to_dashboard = TRUE, dashboard_push_error = %s WHERE phone = %s",
+            (error, phone)
+        )
         conn.commit()
 
 
@@ -465,7 +468,9 @@ def send_whatsapp_buttons(to_phone: str, body_text: str, buttons: list[tuple[str
 # 7. Dashboard Lead Push (Cruz Roja Records Dashboard) — fired on enrollment completion
 def push_enrollment_to_dashboard(phone: str, draft: dict, language: str):
     if not DASHBOARD_URL or not INGEST_TOKEN:
-        return  # Dashboard integration not configured — skip silently
+        # Record this so it's diagnosable via a DB query even without Render log access.
+        mark_lead_pushed(phone, error="Not configured: DASHBOARD_URL or INGEST_TOKEN missing on this deployment")
+        return
 
     comment = (
         f"Course interest: {draft.get('course', 'N/A')}. "
@@ -479,6 +484,7 @@ def push_enrollment_to_dashboard(phone: str, draft: dict, language: str):
         "phone": draft.get("phone") or phone,
         "comment": comment,
     }
+    error = None
     try:
         response = requests.post(
             f"{DASHBOARD_URL}/api/public/leads",
@@ -487,8 +493,10 @@ def push_enrollment_to_dashboard(phone: str, draft: dict, language: str):
             timeout=10,
         )
         if not response.ok:
-            print(f"[ERROR] Failed to push enrollment to dashboard: {response.status_code} {response.text}")
+            error = f"HTTP {response.status_code}: {response.text[:500]}"
+            print(f"[ERROR] Failed to push enrollment to dashboard: {error}")
     except requests.RequestException as e:
+        error = f"Request failed: {e}"
         print(f"[ERROR] Dashboard push request failed: {e}")
     finally:
-        mark_lead_pushed(phone)
+        mark_lead_pushed(phone, error=error)

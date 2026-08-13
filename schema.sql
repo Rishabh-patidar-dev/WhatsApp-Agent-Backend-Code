@@ -24,6 +24,10 @@ create table if not exists leads (
     history jsonb not null default '[]'::jsonb,
     language text not null default 'en',
     pushed_to_dashboard boolean not null default false,
+    -- Raw error (HTTP status + body, or exception text) from the last dashboard
+    -- push attempt. NULL on success. Lets us diagnose push failures via a
+    -- direct DB query instead of needing Render's log console.
+    dashboard_push_error text,
     created_at timestamptz not null default now(),
     last_seen_at timestamptz not null default now()
 );
