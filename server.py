@@ -73,6 +73,22 @@ def has_any(text: str, keywords: tuple) -> bool:
     return any(k in text for k in keywords)
 
 
+# Mirrors the Dashboard's lib/validation.ts toLocalPhone() exactly, so a number
+# accepted here is guaranteed to pass the dashboard's own isValidPhone() check
+# and never gets silently rejected by its /api/public/leads endpoint.
+DASHBOARD_PHONE_COUNTRY_CODE = "52"
+
+
+def to_local_phone(value: str) -> str:
+    digits = "".join(c for c in value if c.isdigit())
+    cc = DASHBOARD_PHONE_COUNTRY_CODE
+    if cc and len(digits) == 10 + len(cc) and digits.startswith(cc):
+        return digits[len(cc):]
+    if len(digits) == 11 and digits.startswith("0"):
+        return digits[1:]
+    return digits
+
+
 # 1. Meta Webhook Verification Endpoint
 @app.get("/webhook")
 def verify_webhook(request: Request):
@@ -194,6 +210,9 @@ def _process_message_locked(from_phone: str, user_text: str, contact_name: str |
         return
 
     if state == ENROLL_PHONE:
+        if len(to_local_phone(stripped)) != 10:
+            send_whatsapp_message(from_phone, ENROLL_PROMPTS[language]["phone_retry"])
+            return
         draft["phone"] = stripped
         set_enrollment_draft(from_phone, draft)
         set_lead_state(from_phone, ENROLL_ADDRESS)
@@ -350,7 +369,8 @@ ENROLL_PROMPTS = {
         "name": "Thanks! What's your full name?\n(Type *cancel* anytime to stop.)",
         "email": "Nice to meet you, {name}! What's your email address?\n(Type *cancel* anytime to stop.)",
         "email_retry": "Hmm, that doesn't look like a valid email. Could you try again?",
-        "phone": "Got it. What's the best phone number to reach you at?\n(Type *cancel* anytime to stop.)",
+        "phone": "Got it. What's the best 10-digit phone number to reach you at? (e.g. 5512345678)\n(Type *cancel* anytime to stop.)",
+        "phone_retry": "That doesn't look like a valid 10-digit phone number. Could you try again? (e.g. 5512345678)",
         "address": "Almost done! What's your address?\n(Type *cancel* anytime to stop.)",
         "complete": (
             "🎉 Thank you, {name}! Your interest in *{course}* has been received. "
@@ -363,7 +383,8 @@ ENROLL_PROMPTS = {
         "name": "¡Gracias! ¿Cuál es tu nombre completo?\n(Escribe *cancelar* en cualquier momento para detener.)",
         "email": "¡Mucho gusto, {name}! ¿Cuál es tu correo electrónico?\n(Escribe *cancelar* en cualquier momento para detener.)",
         "email_retry": "Ese correo no parece válido. ¿Podrías intentarlo de nuevo?",
-        "phone": "Entendido. ¿Cuál es el mejor número de teléfono para contactarte?\n(Escribe *cancelar* en cualquier momento para detener.)",
+        "phone": "Entendido. ¿Cuál es tu número de teléfono a 10 dígitos? (ej. 5512345678)\n(Escribe *cancelar* en cualquier momento para detener.)",
+        "phone_retry": "Ese número no parece un teléfono válido de 10 dígitos. ¿Podrías intentarlo de nuevo? (ej. 5512345678)",
         "address": "¡Ya casi! ¿Cuál es tu dirección?\n(Escribe *cancelar* en cualquier momento para detener.)",
         "complete": (
             "🎉 ¡Gracias, {name}! Hemos recibido tu interés en *{course}*. "
