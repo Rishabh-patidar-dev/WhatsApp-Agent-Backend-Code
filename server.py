@@ -42,6 +42,47 @@ TRANSLATE_TRIGGER = "translate"
 ENROLL_KEYWORDS = ("enroll", "enrol", "sign up", "signup", "register", "inscrib", "registrar")
 CANCEL_KEYWORDS = ("cancel", "cancelar", "stop", "nevermind", "never mind")
 
+# Broad "show me everything" intent — served from a deterministic category listing
+# instead of the top-5 vector search, so nothing gets left out of the answer.
+ALL_COURSES_KEYWORDS = (
+    "all course", "all the course", "every course", "all your course",
+    "full list", "complete list", "entire catalog", "full catalog", "whole catalog", "catalog",
+    "todos los cursos", "todo el catálogo", "todo el catalogo", "catálogo completo", "catalogo completo",
+    "lista completa", "lista de cursos",
+)
+
+# Heuristic for "this message is a question, not an answer to the current enrollment
+# field" — lets a user ask something mid-flow without derailing the saved draft.
+QUESTION_STARTERS = (
+    "what", "how", "when", "where", "why", "which", "who", "can ", "could ", "do you",
+    "does ", "is there", "are there", "will ", "should ", "would ",
+    "qué", "que ", "cómo", "como ", "cuándo", "cuando ", "dónde", "donde ", "por qué", "porque ",
+    "cuál", "cual ", "cuánto", "cuanto ", "quién", "quien ", "puedo", "puede", "hay ",
+)
+
+
+def looks_like_question(lower_text: str) -> bool:
+    if "?" in lower_text:
+        return True
+    return lower_text.startswith(QUESTION_STARTERS)
+
+
+ENROLL_STATE_FIELD = {
+    "ENROLL_COURSE": "course",
+    "ENROLL_NAME": "name",
+    "ENROLL_EMAIL": "email",
+    "ENROLL_PHONE": "phone",
+    "ENROLL_ADDRESS": "address",
+}
+
+
+def current_enroll_prompt(state: str, language: str, draft: dict) -> str:
+    field = ENROLL_STATE_FIELD[state]
+    prompt = ENROLL_PROMPTS[language][field]
+    if field == "email":
+        prompt = prompt.format(name=draft.get("name", ""))
+    return prompt
+
 # Conversation states
 GREET, CHATTING = "GREET", "CHATTING"
 ENROLL_COURSE, ENROLL_NAME, ENROLL_EMAIL, ENROLL_PHONE, ENROLL_ADDRESS = (
@@ -184,6 +225,29 @@ def _process_message_locked(from_phone: str, user_text: str, contact_name: str |
         send_whatsapp_message(from_phone, CANCEL_CONFIRMATION[language])
         return
 
+    # Mid-enrollment question: answer it, then resume the same step — the draft
+    # and state are untouched, so no progress collected so far is lost.
+    if state.startswith("ENROLL_") and looks_like_question(lower):
+        history = lead.get("history") or []
+        if has_any(lower, ALL_COURSES_KEYWORDS):
+            answer = list_all_courses(language)
+            history.extend([
+                {"role": "user", "text": user_text},
+                {"role": "assistant", "text": ALL_COURSES_HISTORY_NOTE[language]},
+            ])
+        else:
+            answer = rag_answer(user_text, history, language)
+            history.extend([
+                {"role": "user", "text": user_text},
+                {"role": "assistant", "text": answer},
+            ])
+        save_lead_history(from_phone, history[-20:])
+        send_whatsapp_message(
+            from_phone,
+            f"{answer}\n\n{RESUME_NOTE[language]}\n{current_enroll_prompt(state, language, draft)}",
+        )
+        return
+
     # --- Enrollment state machine ---
     if state == ENROLL_COURSE:
         draft["course"] = stripped
@@ -243,25 +307,19 @@ def _process_message_locked(from_phone: str, user_text: str, contact_name: str |
 
     history = lead.get("history") or []
 
-    # Generate query embedding
-    emb = gemini_client.models.embed_content(
-        model=EMBEDDING_MODEL,
-        contents=user_text,
-        config=types.EmbedContentConfig(
-            task_type="RETRIEVAL_QUERY",
-            output_dimensionality=EMBEDDING_DIM,
-        ),
-    ).embeddings[0].values
+    # Broad "show me everything" ask: answer from a full, deterministic catalog
+    # listing instead of the top-5 similarity search, so nothing is left out.
+    if has_any(lower, ALL_COURSES_KEYWORDS):
+        answer = list_all_courses(language)
+        history.extend([
+            {"role": "user", "text": user_text},
+            {"role": "assistant", "text": ALL_COURSES_HISTORY_NOTE[language]},
+        ])
+        save_lead_history(from_phone, history[-20:])
+        send_whatsapp_message(from_phone, answer)
+        return
 
-    # Match relevant knowledge base chunks from Supabase
-    with psycopg.connect(DATABASE_URL, row_factory=dict_row, prepare_threshold=None) as conn:
-        matches = conn.execute(
-            "SELECT title, content, similarity FROM match_course_chunks(%s::vector, 5)",
-            (str(emb),)
-        ).fetchall()
-
-    context = "\n\n".join(f"[{m['title']}]\n{m['content']}" for m in matches)
-    reply = generate_llm_reply(user_text, context, history, language)
+    reply = rag_answer(user_text, history, language)
     reply_with_hint = f"{reply}\n\n{CHAT_HINT[language]}"
 
     # Maintain conversation state (Keep up to 20 recent messages)
@@ -325,6 +383,60 @@ def set_enrollment_draft(phone: str, draft: dict):
         conn.commit()
 
 
+def rag_answer(user_text: str, history: list, language: str) -> str:
+    """Embed the query, pull the closest knowledge-base chunks, and generate a reply."""
+    emb = gemini_client.models.embed_content(
+        model=EMBEDDING_MODEL,
+        contents=user_text,
+        config=types.EmbedContentConfig(
+            task_type="RETRIEVAL_QUERY",
+            output_dimensionality=EMBEDDING_DIM,
+        ),
+    ).embeddings[0].values
+
+    with psycopg.connect(DATABASE_URL, row_factory=dict_row, prepare_threshold=None) as conn:
+        matches = conn.execute(
+            "SELECT title, content, similarity FROM match_course_chunks(%s::vector, 5)",
+            (str(emb),)
+        ).fetchall()
+
+    context = "\n\n".join(f"[{m['title']}]\n{m['content']}" for m in matches)
+    return generate_llm_reply(user_text, context, history, language)
+
+
+# Categories that aren't themselves course offerings, so they're left out of the
+# "show me everything" listing.
+NON_COURSE_CATEGORIES = ("Institutional", "Hospital Services", "Membership")
+CATEGORY_LIST_LIMIT = 6
+
+
+def list_all_courses(language: str) -> str:
+    """Deterministic full-catalog listing, grouped by category — used for broad
+    'what courses do you have' asks so the answer is guaranteed complete (no
+    similarity-search truncation, no chance of the model dropping items)."""
+    with psycopg.connect(DATABASE_URL, row_factory=dict_row, prepare_threshold=None) as conn:
+        rows = conn.execute(
+            "SELECT category, title FROM course_chunks "
+            "WHERE category != ALL(%s) ORDER BY category, title",
+            (list(NON_COURSE_CATEGORIES),)
+        ).fetchall()
+
+    grouped: dict[str, list[str]] = {}
+    for r in rows:
+        grouped.setdefault(r["category"], []).append(r["title"])
+
+    lines = [ALL_COURSES_INTRO[language]]
+    for category, titles in grouped.items():
+        lines.append(f"\n*{category}* ({len(titles)})")
+        shown = titles[:CATEGORY_LIST_LIMIT]
+        lines.extend(f"• {t}" for t in shown)
+        remaining = len(titles) - len(shown)
+        if remaining > 0:
+            lines.append(MORE_COURSES_LINE[language].format(n=remaining))
+    lines.append(f"\n{ALL_COURSES_OUTRO[language]}")
+    return "\n".join(lines)
+
+
 def mark_lead_pushed(phone: str, error: str | None = None):
     with psycopg.connect(DATABASE_URL, prepare_threshold=None) as conn:
         conn.execute(
@@ -363,6 +475,26 @@ CANCEL_CONFIRMATION = {
     "en": "No problem, enrollment cancelled. Ask me anything about our courses anytime! 💬",
     "es": "No hay problema, inscripción cancelada. ¡Pregúntame lo que quieras sobre nuestros cursos! 💬",
 }
+ALL_COURSES_INTRO = {
+    "en": "📚 Here's our full course catalog, grouped by category:",
+    "es": "📚 Aquí tienes nuestro catálogo completo de cursos, agrupado por categoría:",
+}
+ALL_COURSES_OUTRO = {
+    "en": "Ask me about any specific course for more details (price, schedule, etc.), or type *enroll* to sign up! 💬",
+    "es": "Pregúntame sobre algún curso específico para más detalles (precio, horario, etc.), o escribe *inscribirme* para registrarte. 💬",
+}
+MORE_COURSES_LINE = {
+    "en": "…and {n} more",
+    "es": "…y {n} más",
+}
+ALL_COURSES_HISTORY_NOTE = {
+    "en": "[Sent the full course catalog, grouped by category.]",
+    "es": "[Se envió el catálogo completo de cursos, agrupado por categoría.]",
+}
+RESUME_NOTE = {
+    "en": "↩️ Now, back to your enrollment —",
+    "es": "↩️ Ahora, sigamos con tu inscripción —",
+}
 ENROLL_PROMPTS = {
     "en": {
         "course": "Great, let's get you enrolled! 📝 Which course are you interested in?\n(Type *cancel* anytime to stop.)",
@@ -395,19 +527,23 @@ ENROLL_PROMPTS = {
 }
 
 SYSTEM_PROMPTS = {
-    "en": """You are the official digital assistant for the Mexican Red Cross Training Coordination.
-You ALWAYS respond in clear, helpful, and polite English, strictly within 2 to 4 sentences maximum (formatting for WhatsApp).
+    "en": """You are the official digital assistant for the Mexican Red Cross Training Coordination, chatting over WhatsApp.
+You ALWAYS respond in clear, warm, and polite English, formatted for WhatsApp: short paragraphs, or a short bullet list when enumerating multiple items.
+Keep replies concise (usually 2 to 5 sentences) but prioritize actually answering the question over hitting a length target — never truncate a direct answer (like a price or a course name) just to stay short.
 
 RULES:
 - Base your answers strictly on the CONTEXT provided below. Do not make up prices, dates, or non-existent courses.
+- Be conversational and engaged, not robotic: react naturally to what the user said, and where it's genuinely helpful, ask a brief follow-up question (e.g. their experience level, or which format they prefer) instead of just dumping facts.
 - If the user wants to register or enroll in a course, let them know they can type *enroll* right here in the chat to sign up.
 - If asked about something outside the catalog, share what information you do have and direct them to contact support.
 - If the request is a real emergency, instruct them immediately to call 911.""",
-    "es": """Eres el asistente digital oficial de la Coordinación de Capacitación de la Cruz Roja Mexicana.
-SIEMPRE respondes en español claro, útil y cortés, estrictamente en un máximo de 2 a 4 oraciones (formato para WhatsApp).
+    "es": """Eres el asistente digital oficial de la Coordinación de Capacitación de la Cruz Roja Mexicana, conversando por WhatsApp.
+SIEMPRE respondes en español claro, cálido y cortés, con formato para WhatsApp: párrafos cortos, o una lista breve con viñetas cuando enumeres varios elementos.
+Sé conciso (normalmente de 2 a 5 oraciones), pero prioriza responder realmente la pregunta por encima de cumplir un límite de longitud — nunca recortes una respuesta directa (como un precio o el nombre de un curso) solo por brevedad.
 
 REGLAS:
 - Basa tus respuestas estrictamente en el CONTEXTO proporcionado a continuación. No inventes precios, fechas ni cursos inexistentes.
+- Sé conversacional y cercano, no robótico: reacciona de forma natural a lo que dice el usuario y, cuando sea realmente útil, haz una breve pregunta de seguimiento (p. ej. su nivel de experiencia, o qué modalidad prefiere) en lugar de solo enumerar datos.
 - Si el usuario desea registrarse o inscribirse en un curso, indícale que puede escribir *inscribirme* aquí mismo en el chat para registrarse.
 - Si te preguntan algo fuera del catálogo, comparte la información que tengas y dirígelo a contactar soporte.
 - Si la solicitud es una emergencia real, indícale de inmediato que llame al 911.""",
