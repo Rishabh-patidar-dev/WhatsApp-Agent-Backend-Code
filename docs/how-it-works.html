@@ -1,0 +1,790 @@
+<title>Cruz Roja WhatsApp Agent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+:root{
+  --ink:#12161C; --body:#3A4451; --muted:#6B7684;
+  --paper:#F1F4F7; --surface:#FFFFFF; --sunken:#E8EDF3;
+  --border:#DCE2EA; --border-strong:#C3CDD9;
+  --accent:#C8102E; --accent-soft:#FCEBEE; --accent-ink:#8E0B20;
+  --green:#1F7A4D; --green-soft:#E6F4EC;
+  --amber:#B3701A; --amber-soft:#FBF0DF;
+  --slate:#3E5C76; --slate-soft:#E7EEF5;
+  --wa-bg:#ECE5DD; --wa-in:#FFFFFF; --wa-out:#D9FDD3; --wa-bar:#075E54; --wa-ink:#111B21; --wa-meta:#667781;
+  --shadow:0 1px 2px rgba(18,22,28,.06), 0 8px 24px -12px rgba(18,22,28,.18);
+  --radius:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ink:#E9EEF5; --body:#B9C3D0; --muted:#8794A4;
+    --paper:#0E1218; --surface:#151B23; --sunken:#1B222C;
+    --border:#252E3A; --border-strong:#33404F;
+    --accent:#F4626D; --accent-soft:#2A171B; --accent-ink:#F9A0A7;
+    --green:#4CBF8B; --green-soft:#12241C;
+    --amber:#E0A54A; --amber-soft:#251D10;
+    --slate:#7FA3C4; --slate-soft:#141D26;
+    --wa-bg:#0B141A; --wa-in:#202C33; --wa-out:#005C4B; --wa-bar:#1F2C34; --wa-ink:#E9EDEF; --wa-meta:#8696A0;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -14px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#E9EEF5; --body:#B9C3D0; --muted:#8794A4;
+  --paper:#0E1218; --surface:#151B23; --sunken:#1B222C;
+  --border:#252E3A; --border-strong:#33404F;
+  --accent:#F4626D; --accent-soft:#2A171B; --accent-ink:#F9A0A7;
+  --green:#4CBF8B; --green-soft:#12241C;
+  --amber:#E0A54A; --amber-soft:#251D10;
+  --slate:#7FA3C4; --slate-soft:#141D26;
+  --wa-bg:#0B141A; --wa-in:#202C33; --wa-out:#005C4B; --wa-bar:#1F2C34; --wa-ink:#E9EDEF; --wa-meta:#8696A0;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -14px rgba(0,0,0,.7);
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--paper); color:var(--body);
+  font-family:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  font-size:16px; line-height:1.65; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1060px; margin:0 auto; padding:0 24px}
+.col{max-width:68ch}
+h1,h2,h3,h4{font-family:Archivo,"IBM Plex Sans",sans-serif; color:var(--ink); text-wrap:balance; margin:0}
+code,kbd,.mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace}
+a{color:var(--accent); text-decoration-thickness:1px; text-underline-offset:2px}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:3px}
+
+/* ---------- header ---------- */
+header.top{
+  background:var(--surface); border-bottom:1px solid var(--border);
+  padding:44px 0 36px;
+}
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace; font-size:.72rem; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--accent); font-weight:500;
+}
+h1{font-size:clamp(2rem,4.4vw,2.9rem); line-height:1.08; letter-spacing:-.02em; margin:12px 0 14px; font-weight:700}
+.lede{font-size:1.09rem; max-width:60ch; color:var(--body)}
+.chips{display:flex; flex-wrap:wrap; gap:8px; margin-top:24px}
+.chip{
+  font-family:"IBM Plex Mono",monospace; font-size:.74rem; padding:5px 10px;
+  border:1px solid var(--border-strong); border-radius:100px; color:var(--muted); background:var(--paper);
+}
+.chip b{color:var(--ink); font-weight:500}
+
+/* ---------- sections ---------- */
+section{padding:56px 0; border-bottom:1px solid var(--border)}
+.sec-head{display:flex; gap:14px; align-items:baseline; margin-bottom:8px}
+.sec-num{
+  font-family:"IBM Plex Mono",monospace; font-size:.8rem; color:var(--accent);
+  border:1px solid var(--accent); border-radius:4px; padding:1px 7px; flex:none; font-weight:500;
+}
+h2{font-size:clamp(1.35rem,2.6vw,1.8rem); letter-spacing:-.015em; font-weight:600}
+.sec-sub{color:var(--muted); margin:0 0 28px; max-width:62ch}
+h3{font-size:1.02rem; font-weight:600; margin:28px 0 8px; letter-spacing:-.005em}
+p{margin:0 0 14px}
+ul,ol{margin:0 0 14px; padding-left:20px}
+li{margin-bottom:7px}
+strong{color:var(--ink); font-weight:600}
+.mono-inline{
+  font-family:"IBM Plex Mono",monospace; font-size:.86em; background:var(--sunken);
+  border:1px solid var(--border); border-radius:4px; padding:1px 5px; color:var(--ink);
+}
+
+/* ---------- whatsapp mock ---------- */
+.demo{display:grid; grid-template-columns:minmax(280px,340px) 1fr; gap:36px; align-items:start}
+@media (max-width:820px){.demo{grid-template-columns:1fr}}
+.phone{
+  background:var(--wa-bg); border:1px solid var(--border-strong); border-radius:18px;
+  overflow:hidden; box-shadow:var(--shadow);
+}
+.phone-bar{
+  background:var(--wa-bar); color:#fff; padding:11px 14px; display:flex; align-items:center; gap:10px;
+  font-size:.9rem; font-weight:500;
+}
+.phone-av{width:26px; height:26px; border-radius:50%; background:#fff; color:var(--accent);
+  display:grid; place-items:center; font-size:.85rem; font-weight:700; font-family:Archivo,sans-serif}
+.phone-body{padding:14px 12px; display:flex; flex-direction:column; gap:9px}
+.bub{
+  max-width:88%; padding:8px 10px; border-radius:9px; font-size:.83rem; line-height:1.5;
+  color:var(--wa-ink); box-shadow:0 1px 1px rgba(0,0,0,.13); position:relative;
+}
+.bub.in{background:var(--wa-in); align-self:flex-start; border-top-left-radius:2px}
+.bub.out{background:var(--wa-out); align-self:flex-end; border-top-right-radius:2px}
+.bub .t{display:block; font-size:.63rem; color:var(--wa-meta); text-align:right; margin-top:3px}
+.bub b{font-weight:600}
+.menu-rows{margin-top:8px; border-top:1px solid rgba(128,140,150,.28); padding-top:7px; display:flex; flex-direction:column; gap:5px}
+.menu-row{
+  display:flex; justify-content:space-between; gap:8px; font-size:.76rem;
+  padding:5px 7px; background:rgba(128,140,150,.1); border-radius:5px;
+}
+.menu-row span:last-child{color:var(--wa-meta); font-size:.68rem; white-space:nowrap}
+.list-btn{
+  margin-top:8px; text-align:center; color:#00A5F4; font-weight:600; font-size:.8rem;
+  border-top:1px solid rgba(128,140,150,.28); padding-top:7px;
+}
+.demo-notes{display:flex; flex-direction:column; gap:18px}
+.note{border-left:2px solid var(--accent); padding-left:14px}
+.note h4{font-size:.95rem; margin-bottom:4px; font-weight:600}
+.note p{font-size:.94rem; margin:0; color:var(--muted)}
+
+/* ---------- flow lanes ---------- */
+.lanes{display:grid; gap:14px; margin:26px 0 8px}
+.lane{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+  padding:16px 18px; display:grid; grid-template-columns:118px 1fr; gap:18px; align-items:center;
+}
+@media (max-width:720px){.lane{grid-template-columns:1fr; gap:10px}}
+.lane-tag{display:flex; flex-direction:column; gap:3px}
+.lane-tag .k{font-family:Archivo,sans-serif; font-weight:600; color:var(--ink); font-size:.95rem}
+.lane-tag .v{font-family:"IBM Plex Mono",monospace; font-size:.72rem; color:var(--muted)}
+.steps{display:flex; flex-wrap:wrap; align-items:center; gap:7px}
+.step{
+  font-size:.8rem; padding:6px 10px; border-radius:6px; background:var(--sunken);
+  border:1px solid var(--border); color:var(--ink); white-space:nowrap;
+}
+.step.mono{font-family:"IBM Plex Mono",monospace; font-size:.74rem}
+.step.hi{background:var(--accent-soft); border-color:var(--accent); color:var(--accent-ink)}
+.step.ok{background:var(--green-soft); border-color:var(--green); color:var(--green)}
+.arw{color:var(--muted); font-size:.85rem}
+.lane.fast{border-left:3px solid var(--green)}
+.lane.slow{border-left:3px solid var(--slate)}
+
+/* ---------- tree ---------- */
+.tree{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+  padding:20px 22px; font-family:"IBM Plex Mono",monospace; font-size:.82rem;
+  line-height:1.85; overflow-x:auto; color:var(--body);
+}
+.tree .n{color:var(--ink); font-weight:500}
+.tree .c{color:var(--muted)}
+.tree .id{color:var(--accent)}
+.tree .g{color:var(--green)}
+
+/* ---------- cards ---------- */
+.grid{display:grid; gap:14px; margin:24px 0 4px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(268px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(212px,1fr))}
+.card{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:17px 18px;
+}
+.card h4{font-size:.96rem; margin:0 0 7px; display:flex; align-items:center; gap:8px; font-weight:600}
+.card p{font-size:.9rem; margin:0; color:var(--muted)}
+.card p + p{margin-top:8px}
+.dot{width:7px; height:7px; border-radius:50%; flex:none}
+.dot.r{background:var(--accent)} .dot.g{background:var(--green)}
+.dot.a{background:var(--amber)} .dot.s{background:var(--slate)}
+.card .where{
+  display:block; margin-top:11px; font-family:"IBM Plex Mono",monospace; font-size:.73rem;
+  color:var(--muted); padding-top:9px; border-top:1px dashed var(--border-strong);
+}
+
+/* ---------- state machine ---------- */
+.machine{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+  padding:22px; display:flex; flex-wrap:wrap; align-items:center; gap:9px; margin:22px 0 14px;
+}
+.node{
+  font-family:"IBM Plex Mono",monospace; font-size:.75rem; padding:7px 11px; border-radius:6px;
+  background:var(--sunken); border:1px solid var(--border-strong); color:var(--ink); white-space:nowrap;
+}
+.node.start{background:var(--slate-soft); border-color:var(--slate); color:var(--slate)}
+.node.end{background:var(--green-soft); border-color:var(--green); color:var(--green)}
+.interrupt{
+  margin-top:4px; width:100%; border-top:1px dashed var(--border-strong); padding-top:16px;
+  display:flex; flex-wrap:wrap; align-items:center; gap:9px;
+}
+.interrupt .label{
+  font-size:.8rem; color:var(--accent); font-weight:600; font-family:Archivo,sans-serif;
+}
+
+/* ---------- tables ---------- */
+.tablewrap{overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); margin:22px 0 10px}
+table{border-collapse:collapse; width:100%; font-size:.87rem; min-width:560px}
+th,td{text-align:left; padding:10px 14px; border-bottom:1px solid var(--border); vertical-align:top}
+th{
+  font-family:"IBM Plex Mono",monospace; font-size:.7rem; letter-spacing:.09em; text-transform:uppercase;
+  color:var(--muted); font-weight:500; background:var(--sunken); white-space:nowrap;
+}
+tbody tr:last-child td{border-bottom:none}
+td.mono, th.mono{font-family:"IBM Plex Mono",monospace; font-size:.79rem; color:var(--ink); white-space:nowrap}
+td .sub{display:block; color:var(--muted); font-size:.83rem; white-space:normal}
+
+/* ---------- code ---------- */
+pre{
+  background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--slate);
+  border-radius:var(--radius); padding:16px 18px; overflow-x:auto; margin:16px 0;
+  font-family:"IBM Plex Mono",monospace; font-size:.81rem; line-height:1.75; color:var(--ink);
+}
+pre .c{color:var(--muted)}
+pre .p{color:var(--accent)}
+
+/* ---------- callout ---------- */
+.callout{
+  border:1px solid var(--amber); background:var(--amber-soft); border-radius:var(--radius);
+  padding:15px 18px; margin:22px 0; font-size:.92rem;
+}
+.callout h4{font-size:.92rem; color:var(--amber); margin-bottom:5px; font-weight:600}
+.callout p{margin:0; color:var(--body)}
+.callout p + p{margin-top:8px}
+
+.checklist{list-style:none; padding:0; margin:18px 0 0}
+.checklist li{
+  display:flex; gap:11px; align-items:flex-start; padding:11px 0; border-bottom:1px solid var(--border); margin:0;
+}
+.checklist li:last-child{border-bottom:none}
+.checklist .num{
+  font-family:"IBM Plex Mono",monospace; font-size:.73rem; color:var(--accent);
+  border:1px solid var(--accent); border-radius:4px; padding:1px 6px; flex:none; margin-top:2px;
+}
+.checklist .txt{font-size:.93rem}
+.checklist .txt b{display:block; color:var(--ink); font-weight:600; margin-bottom:2px}
+
+footer{padding:38px 0 56px; color:var(--muted); font-size:.86rem}
+footer p{margin:0 0 6px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <div class="eyebrow">Innovun × Cruz Roja Mexicana · Technical documentation</div>
+    <h1>How the WhatsApp training agent works</h1>
+    <p class="lede">
+      One WhatsApp number that answers questions about 67 real Cruz Roja courses, lets people
+      browse a tappable menu, and captures enrolment leads into the dashboard — without ever
+      inventing a price.
+    </p>
+    <div class="chips">
+      <span class="chip"><b>67</b> courses</span>
+      <span class="chip"><b>71</b> retrievable cards</span>
+      <span class="chip"><b>8</b> menu categories</span>
+      <span class="chip">Spanish + English</span>
+      <span class="chip">LangChain · pgvector</span>
+      <span class="chip">FastAPI · Meta Cloud API</span>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<!-- 1 ------------------------------------------------------------------ -->
+<section>
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">1</span><h2>What the customer sees</h2></div>
+    <p class="sec-sub">Two ways in, one conversation. People who like menus tap; people who prefer
+      typing just type. Both land in the same place.</p>
+
+    <div class="demo">
+      <div class="phone">
+        <div class="phone-bar"><span class="phone-av">CR</span> Cruz Roja · Capacitación</div>
+        <div class="phone-body">
+          <div class="bub out">Hola<span class="t">11:01</span></div>
+          <div class="bub in">
+            ¡Hola Rohit! 👋 Bienvenido a la <b>Coordinación de Capacitación de la Cruz Roja Mexicana</b>.
+            Puedo darte información de nuestros 67 cursos, resolver tus dudas e inscribirte.
+            <div class="menu-rows">
+              <div class="menu-row"><span>📚 Catálogo de cursos</span><span>67</span></div>
+              <div class="menu-row"><span>📝 Inscribirme</span><span></span></div>
+              <div class="menu-row"><span>💵 Precios</span><span></span></div>
+              <div class="menu-row"><span>📞 Hablar con el equipo</span><span></span></div>
+            </div>
+            <div class="list-btn">☰ Ver opciones</div>
+            <span class="t">11:01</span>
+          </div>
+          <div class="bub out">¿el BLS incluye manual?<span class="t">11:03</span></div>
+          <div class="bub in">
+            Sí, el curso de <b>Basic Life Support (BLS)</b> incluye manual digital.
+            Dura 6 horas en 1 sesión presencial y cuesta <b>$1,900 MXN</b> por persona.
+            <span class="t">11:03</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="demo-notes">
+        <div class="note">
+          <h4>Tapping is instant and free</h4>
+          <p>Menu taps are answered straight from the database — no embedding call, no model call.
+            The catalogue is cached for five minutes, so a tap costs a dictionary lookup.</p>
+        </div>
+        <div class="note">
+          <h4>Typing goes through retrieval</h4>
+          <p>Free text is embedded, matched against the course cards, and answered by the model
+            using only what came back. Roughly three to five seconds.</p>
+        </div>
+        <div class="note">
+          <h4>The agent knows what you are looking at</h4>
+          <p>Ask “¿incluye manual?” right after opening the BLS card and it answers about BLS.
+            The card being viewed is pinned into the context, so follow-ups don’t need to repeat
+            the course name.</p>
+        </div>
+        <div class="note">
+          <h4>It never quotes a price it cannot trace</h4>
+          <p>Every amount in a generated answer is checked against the <span class="mono-inline">courses</span>
+            table before sending. An untraceable figure means the reply is replaced with stored facts.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 2 ------------------------------------------------------------------ -->
+<section>
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">2</span><h2>How a message travels</h2></div>
+    <p class="sec-sub">Meta allows about two seconds to acknowledge a webhook before it assumes the
+      endpoint is broken and redelivers. So the webhook does almost nothing: it proves the message
+      is genuine, hands it to a background task, and returns.</p>
+
+    <div class="lanes">
+      <div class="lane">
+        <div class="lane-tag"><span class="k">Arrival</span><span class="v">≤ 2 s budget</span></div>
+        <div class="steps">
+          <span class="step mono">POST /webhook</span><span class="arw">→</span>
+          <span class="step hi">verify HMAC signature</span><span class="arw">→</span>
+          <span class="step mono">parse_webhook</span><span class="arw">→</span>
+          <span class="step ok">200 OK</span><span class="arw">→</span>
+          <span class="step">background task</span>
+        </div>
+      </div>
+
+      <div class="lane fast">
+        <div class="lane-tag"><span class="k">Tap</span><span class="v">~200 ms · $0</span></div>
+        <div class="steps">
+          <span class="step mono">crs:HP038</span><span class="arw">→</span>
+          <span class="step">parse_action</span><span class="arw">→</span>
+          <span class="step">read <span class="mono">courses</span> (cached)</span><span class="arw">→</span>
+          <span class="step">render card</span><span class="arw">→</span>
+          <span class="step ok">send</span>
+        </div>
+      </div>
+
+      <div class="lane slow">
+        <div class="lane-tag"><span class="k">Typed</span><span class="v">~3–5 s</span></div>
+        <div class="steps">
+          <span class="step">embed question</span><span class="arw">→</span>
+          <span class="step">vector + name search</span><span class="arw">→</span>
+          <span class="step">assemble context</span><span class="arw">→</span>
+          <span class="step">model writes reply</span><span class="arw">→</span>
+          <span class="step hi">verify prices</span><span class="arw">→</span>
+          <span class="step ok">send</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <h3>Why retrieval runs two searches</h3>
+      <p>Vector search is good at meaning: “qué hago si alguien se está ahogando” finds the CPR and
+        airway course without sharing a word with it. Name search is good at exact things: course
+        codes and acronyms, where every trauma card looks alike to an embedding. Each catches what
+        the other misses, and the results are merged with the name hit ranked higher.</p>
+      <p>If the best match scores below <span class="mono-inline">0.55</span>, the agent says it
+        doesn’t have that information rather than improvising, and writes the question to
+        <span class="mono-inline">unanswered_questions</span> — the list Cruz Roja works through to
+        improve their own material.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 3 ------------------------------------------------------------------ -->
+<section>
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">3</span><h2>The menu map</h2></div>
+    <p class="sec-sub">WhatsApp allows ten rows in a list message and 24 characters per row title.
+      Those two limits shape the whole tree: nine courses per page plus one navigation row, and
+      course names shortened to their acronym where they have one.</p>
+
+    <div class="tree">
+<span class="c">menu:main</span> <span class="n">Menú principal</span>
+├─ <span class="id">menu:browse</span>      <span class="n">📚 Catálogo de cursos</span>
+│   ├─ <span class="id">grp:public</span>        <span class="n">Público general</span> <span class="c">(8)</span>
+│   ├─ <span class="id">grp:employees</span>     <span class="n">Empresas</span> <span class="c">(4)</span>
+│   ├─ <span class="id">grp:health</span>        <span class="n">Personal de salud</span> <span class="c">(33)</span>  <span class="c">→ paged: 9 + “ver más”</span>
+│   │   ├─ <span class="id">crs:HP001</span>  <span class="n">Accesos Intraóseos</span>  <span class="c">6 h · $650 MXN</span>
+│   │   └─ <span class="id">grp:health:9</span>  <span class="c">next 9…</span>
+│   ├─ <span class="id">grp:rescue</span>        <span class="n">Rescate</span> <span class="c">(6)</span>
+│   ├─ <span class="id">grp:international</span> <span class="n">Cert. internacional</span> <span class="c">(9) — AHA / NAEMT</span>
+│   ├─ <span class="id">grp:diploma</span>       <span class="n">Diplomados</span> <span class="c">(5) — UNAM / Anáhuac</span>
+│   ├─ <span class="id">grp:certification</span> <span class="n">Cert. CONOCER</span> <span class="c">(1)</span>
+│   └─ <span class="id">grp:instructor</span>    <span class="n">Instructores</span> <span class="c">(1)</span>
+├─ <span class="id">act:enroll</span>       <span class="n">📝 Inscribirme</span>        <span class="c">→ starts the sign-up flow</span>
+├─ <span class="id">act:prices</span>       <span class="n">💵 Precios</span>
+├─ <span class="id">act:requirements</span> <span class="n">📋 Requisitos</span>
+├─ <span class="id">act:faq</span>          <span class="n">❓ Preguntas frecuentes</span>
+├─ <span class="id">act:contact</span>      <span class="n">📞 Hablar con el equipo</span>
+└─ <span class="id">act:language</span>     <span class="n">🌐 English / Español</span>
+
+<span class="c">Course card →</span> <span class="g">[Inscribirme]</span> <span class="g">[Ver otros cursos]</span> <span class="g">[Menú principal]</span>  <span class="c">(3 buttons max)</span>
+    </div>
+
+    <div class="col">
+      <p>Every tappable thing has a stable id, and all ids are parsed in one function
+        (<span class="mono-inline">menus.parse_action</span>). Adding a menu entry means adding a row
+        and a branch there — nothing else in the system needs to know about it.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 4 ------------------------------------------------------------------ -->
+<section>
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">4</span><h2>Sign-up, and what happens when it’s interrupted</h2></div>
+    <p class="sec-sub">The flow collects five fields and pushes the lead to the dashboard. The part
+      that matters commercially is what it does when someone asks a question halfway through.</p>
+
+    <div class="machine">
+      <span class="node start">CHATTING</span><span class="arw">→</span>
+      <span class="node">ENROLL_COURSE</span><span class="arw">→</span>
+      <span class="node">ENROLL_NAME</span><span class="arw">→</span>
+      <span class="node">ENROLL_EMAIL</span><span class="arw">→</span>
+      <span class="node">ENROLL_PHONE</span><span class="arw">→</span>
+      <span class="node">ENROLL_ADDRESS</span><span class="arw">→</span>
+      <span class="node end">pushed to dashboard</span>
+
+      <div class="interrupt">
+        <span class="label">Interruption</span>
+        <span class="node">any question mid-flow</span><span class="arw">→</span>
+        <span class="node">answered with the course pinned</span><span class="arw">→</span>
+        <span class="node">same field asked again</span><span class="arw">→</span>
+        <span class="node end">state &amp; draft untouched</span>
+      </div>
+    </div>
+
+    <div class="col">
+      <p>A lead who asks “¿el curso incluye manual?” while typing their email is not a lead you want
+        to drop, and they are not answering the question you asked. The agent detects that the
+        message is a question, answers it, then repeats the field it was waiting on. Nothing
+        collected so far is lost, and the flow does not restart.</p>
+      <p>Starting from a course card skips the first step entirely — the course is already known, so
+        it goes straight to asking for a name. Email and phone are validated before being stored,
+        and the phone check mirrors the dashboard’s own <span class="mono-inline">toLocalPhone()</span>
+        so a number accepted here can never be rejected there.</p>
+      <p>The state moves to <span class="mono-inline">CHATTING</span> <em>before</em> the dashboard
+        push, so a duplicate webhook delivery from Meta cannot submit the same lead twice.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 5 ------------------------------------------------------------------ -->
+<section>
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">5</span><h2>What keeps it honest</h2></div>
+    <p class="sec-sub">Six rails. Four come from the client's own data guide; two are ordinary
+      production hygiene the first version was missing.</p>
+
+    <div class="grid g2">
+      <div class="card">
+        <h4><span class="dot r"></span> Webhook signature</h4>
+        <p>The webhook URL is public — anyone who finds it can POST a fake customer message. Every
+          delivery is now checked against Meta’s HMAC over the raw body, in constant time.</p>
+        <span class="where">channels/whatsapp/verify.py</span>
+      </div>
+      <div class="card">
+        <h4><span class="dot r"></span> Price verification</h4>
+        <p>Every amount in a generated reply must trace back to the <span class="mono-inline">courses</span>
+          table. If one doesn’t, the model’s text is discarded and a card built from stored facts is
+          sent instead. A wrong course suggestion is recoverable; a wrong price is a commercial problem.</p>
+        <span class="where">core/generation.py · verify_prices()</span>
+      </div>
+      <div class="card">
+        <h4><span class="dot a"></span> Compliance flags</h4>
+        <p>Courses carrying a known data quirk inject a rule into the prompt. HP014 and HP015 share
+          one description verbatim, so the agent may use it but must not explain the difference
+          between them — it routes that to the team.</p>
+        <span class="where">core/prompts.py · FLAG_NOTICES</span>
+      </div>
+      <div class="card">
+        <h4><span class="dot a"></span> Never close a door</h4>
+        <p>Class size is not a rejection: a 30-person company gets offered a second group or a
+          private booking, never a “no”. Minimum enrolment is never used to say a course won’t run,
+          and start dates are always confirmed by the team.</p>
+        <span class="where">core/prompts.py · SYSTEM</span>
+      </div>
+      <div class="card">
+        <h4><span class="dot s"></span> Confidence floor</h4>
+        <p>Below 0.55 similarity the agent says it doesn’t know and logs the question, rather than
+          filling the gap with something plausible.</p>
+        <span class="where">core/retrieval.py · CONFIDENCE_FLOOR</span>
+      </div>
+      <div class="card">
+        <h4><span class="dot g"></span> Rate limit &amp; takeover</h4>
+        <p>Twenty messages per minute per number caps runaway cost. Setting
+          <span class="mono-inline">human_takeover</span> on a lead makes the bot go silent so a
+          person on the dashboard can reply instead.</p>
+        <span class="where">core/conversation.py</span>
+      </div>
+    </div>
+
+    <div class="callout">
+      <h4>One rail is not armed yet</h4>
+      <p><span class="mono-inline">META_APP_SECRET</span> is not set in <span class="mono-inline">.env</span>,
+        so signature verification currently logs a warning and lets requests through. Copy the App
+        Secret from Meta → App → Settings → Basic before this goes live; the code enforces it as
+        soon as the value exists.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 6 ------------------------------------------------------------------ -->
+<section>
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">6</span><h2>The data, and how it gets in</h2></div>
+    <p class="sec-sub">The client sends a spreadsheet. It arrives human-typed: prices written three
+      different ways, course names up to 66 characters, the same category spelled with trailing
+      spaces. Normalisation happens once, at ingest.</p>
+
+    <div class="lanes">
+      <div class="lane">
+        <div class="lane-tag"><span class="k">Ingest</span><span class="v">python ingest.py</span></div>
+        <div class="steps">
+          <span class="step mono">juptr_rc_courses.csv</span><span class="arw">→</span>
+          <span class="step">normalise</span><span class="arw">→</span>
+          <span class="step">build 71 cards</span><span class="arw">→</span>
+          <span class="step">embed (768-dim)</span><span class="arw">→</span>
+          <span class="step ok">courses + course_chunks</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <h3>Two tables, two jobs</h3>
+      <p><span class="mono-inline">courses</span> holds one structured row per course and is the
+        source of truth for anything the agent must not improvise — price, hours, prerequisites,
+        credential. Menus read from it, and generated answers are checked against it.</p>
+      <p><span class="mono-inline">course_chunks</span> holds one readable card per course plus four
+        institutional cards (contact details, membership, hospital services), each with a 768-dimension
+        embedding and an HNSW cosine index. Questions search this.</p>
+
+      <h3>Decisions made once, at normalise time</h3>
+      <ul>
+        <li><strong>Prices</strong> — <span class="mono-inline">755</span> becomes a number plus the
+          display text “$755 MXN por persona”. The five package and instalment programmes get
+          <em>no</em> number at all, because there isn’t a single one to quote.</li>
+        <li><strong>Menu labels</strong> — a course’s own acronym wins (BLS, PHTLS, DAMP-B); otherwise
+          the name is trimmed on a word boundary to fit 24 characters.</li>
+        <li><strong>Category</strong> — GP009 carries a General Public prefix but is a 920-hour paid
+          diploma, so it is filed with the diplomas, exactly as the data guide instructs.</li>
+      </ul>
+    </div>
+
+    <div class="callout">
+      <h4>Two columns still to come from the client</h4>
+      <p><span class="mono-inline">Content_Modules</span> and <span class="mono-inline">Learning_Objectives</span>
+        were truncated in the PDF export, so they are not loaded. The pipeline already has columns for
+        them — when the original .xlsx arrives, add them to the CSV and re-run <span class="mono-inline">ingest.py</span>.
+        Until then the agent answers “what is actually covered?” from the short description.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 7 ------------------------------------------------------------------ -->
+<section>
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">7</span><h2>The code map</h2></div>
+    <p class="sec-sub">Every file has one job. When something breaks there is one obvious place to look.</p>
+
+    <div class="tree">
+<span class="n">app/</span>
+├─ <span class="n">main.py</span>                <span class="c">FastAPI webhook — verifies, queues, returns 200</span>
+├─ <span class="n">config.py</span>              <span class="c">the ONLY file that reads environment variables</span>
+├─ <span class="n">channels/whatsapp/</span>
+│   ├─ <span class="n">client.py</span>          <span class="c">send text / buttons / list menus</span>
+│   ├─ <span class="n">verify.py</span>          <span class="c">HMAC signature check</span>
+│   ├─ <span class="n">parse_webhook.py</span>   <span class="c">sorts real messages from delivery receipts</span>
+│   └─ <span class="n">format.py</span>          <span class="c">Meta's length limits, in one place</span>
+├─ <span class="n">core/</span>                  <span class="c">← the brain. No vendor SDK may be imported here</span>
+│   ├─ <span class="n">conversation.py</span>    <span class="c">the router: taps, questions, sign-up flow</span>
+│   ├─ <span class="n">menus.py</span>           <span class="c">the menu tree + id parsing</span>
+│   ├─ <span class="n">copy.py</span>            <span class="c">every line the agent can say, both languages</span>
+│   ├─ <span class="n">retrieval.py</span>       <span class="c">LangChain retriever: vector + name search</span>
+│   ├─ <span class="n">generation.py</span>      <span class="c">LCEL chain + price verification</span>
+│   ├─ <span class="n">prompts.py</span>         <span class="c">system rules from the client's data guide</span>
+│   └─ <span class="n">ingestion/</span>         <span class="c">parse → normalise → build_cards → pipeline</span>
+├─ <span class="n">providers/</span>             <span class="c">← the only place vendor SDKs live</span>
+│   ├─ <span class="n">embeddings.py</span>      <span class="c">Gemini, pinned to 768 dims</span>
+│   └─ <span class="n">llm.py</span>             <span class="c">Gemini or Claude, chosen by env var</span>
+├─ <span class="n">db/</span>
+│   ├─ <span class="n">client.py</span>          <span class="c">pooled connections</span>
+│   ├─ <span class="n">catalog.py</span>         <span class="c">course reads, cached 5 min</span>
+│   └─ <span class="n">leads.py</span>           <span class="c">contacts and conversation state</span>
+└─ <span class="n">integrations/dashboard.py</span>  <span class="c">lead push</span>
+
+<span class="n">scripts/</span>
+├─ <span class="n">build_catalog_csv.py</span>   <span class="c">client sheet → data/juptr_rc_courses.csv</span>
+├─ <span class="n">selftest.py</span>            <span class="c">whole flow, no DB/model/Meta needed</span>
+└─ <span class="n">simulate_chat.py</span>       <span class="c">live transcript, nothing sent to WhatsApp</span>
+    </div>
+  </div>
+</section>
+
+<!-- 8 ------------------------------------------------------------------ -->
+<section>
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">8</span><h2>Working inside the monorepo</h2></div>
+    <p class="sec-sub">This agent was built to the same separation your senior's structure uses, so
+      moving it in is a copy per folder rather than a rewrite. Here is where each piece lands.</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th>This repo</th><th>Monorepo destination</th><th>Why there</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="mono">app/main.py</td>
+            <td class="mono">apps/api/src/routes/whatsapp.ts</td>
+            <td>The two-second rule lives here. Verify, enqueue, return.</td>
+          </tr>
+          <tr>
+            <td class="mono">channels/whatsapp/verify.py</td>
+            <td class="mono">apps/api/src/middleware/<wbr>verifyMetaSignature.ts</td>
+            <td>Runs before the route handler, on the raw body.</td>
+          </tr>
+          <tr>
+            <td class="mono">core/conversation.py</td>
+            <td class="mono">apps/worker/src/jobs/<wbr>whatsappReply.ts</td>
+            <td>The slow work: retrieval, generation, sending. Off the request path.</td>
+          </tr>
+          <tr>
+            <td class="mono">core/retrieval.py</td>
+            <td class="mono">packages/core/src/retrieval/<wbr>hybrid.ts</td>
+            <td>Same idea, same name: vector and keyword merged.</td>
+          </tr>
+          <tr>
+            <td class="mono">core/generation.py</td>
+            <td class="mono">packages/core/src/generation/<wbr>answer.ts + verifyPrice.ts</td>
+            <td>One entry point both WhatsApp and the web widget call.</td>
+          </tr>
+          <tr>
+            <td class="mono">core/prompts.py</td>
+            <td class="mono">packages/core/src/generation/<wbr>prompts/</td>
+            <td>System rules, split per channel (whatsapp.ts / web.ts).</td>
+          </tr>
+          <tr>
+            <td class="mono">core/ingestion/</td>
+            <td class="mono">packages/core/src/ingestion/</td>
+            <td>parse → normalise → buildCards → pipeline, already the same four steps.</td>
+          </tr>
+          <tr>
+            <td class="mono">providers/</td>
+            <td class="mono">packages/providers/</td>
+            <td>The only folder allowed to name a vendor. Swapping to Bedrock is a config change.</td>
+          </tr>
+          <tr>
+            <td class="mono">db/</td>
+            <td class="mono">packages/db/</td>
+            <td>Schema, migrations and the shared client.</td>
+          </tr>
+          <tr>
+            <td class="mono">channels/whatsapp/*</td>
+            <td class="mono">packages/channels/whatsapp/</td>
+            <td>client, parseWebhook, format — same split, same filenames.</td>
+          </tr>
+          <tr>
+            <td class="mono">config.py</td>
+            <td class="mono">packages/shared/config.ts</td>
+            <td>The one file permitted to read <span class="mono-inline">process.env</span>.</td>
+          </tr>
+          <tr>
+            <td class="mono">core/copy.py</td>
+            <td class="mono">packages/core/src/copy/</td>
+            <td>No equivalent yet — propose it. Wording changes shouldn't touch flow code.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>The four rules that structure enforces</h3>
+    <ol>
+      <li><strong>core/ imports no vendor SDK.</strong> It asks for “something that can generate
+        text”; providers/ decides what that is. There is a lint rule in the monorepo that fails the
+        build if this is broken — it is why the AWS migration is a config change.</li>
+      <li><strong>Only config reads the environment.</strong> Everything else imports from it, so a
+        missing key fails at boot with a clear message, not at 2am on a live webhook.</li>
+      <li><strong>The API never does slow work.</strong> Anything that takes seconds belongs in the
+        worker. In this repo that is a FastAPI background task; in the monorepo it is a queue job —
+        the function body is the same either way.</li>
+      <li><strong>Prices are verified, never recalled.</strong> Look the number up by course id
+        before it goes out, whichever channel is asking.</li>
+    </ol>
+
+    <h3>Your first pull request into that repo</h3>
+    <ol class="checklist">
+      <li><span class="num">1</span><span class="txt"><b>Port the schema first</b>
+        <span class="mono-inline">packages/db/prisma/schema.prisma</span> gains
+        <span class="mono-inline">courses</span>, <span class="mono-inline">course_chunks</span> and
+        <span class="mono-inline">unanswered_questions</span>. The card similarity search is
+        hand-written SQL under <span class="mono-inline">prisma/sql/</span> — Prisma cannot express it.</span></li>
+      <li><span class="num">2</span><span class="txt"><b>Add the index assertion</b>
+        <span class="mono-inline">assertIndexes.ts</span> already exists for exactly this reason: a
+        routine migration can silently drop the HNSW index and nothing visibly breaks — search just
+        gets slow and expensive.</span></li>
+      <li><span class="num">3</span><span class="txt"><b>Move providers before core</b>
+        Port <span class="mono-inline">embeddings</span> and <span class="mono-inline">llm</span>
+        first, so the core files you port next have something to import that isn’t vendor-specific.</span></li>
+      <li><span class="num">4</span><span class="txt"><b>Keep answer() as the single entry point</b>
+        The web widget on the WordPress site will call the same function. Don’t let WhatsApp-specific
+        formatting leak into it — that belongs in
+        <span class="mono-inline">packages/channels/whatsapp/format.ts</span>.</span></li>
+      <li><span class="num">5</span><span class="txt"><b>Add the menu tree to evals</b>
+        <span class="mono-inline">evals/questions.yaml</span> should include the real questions this
+        agent gets — prices, requirements, group bookings — so a model or prompt change can be
+        measured instead of guessed at.</span></li>
+    </ol>
+  </div>
+</section>
+
+<!-- 9 ------------------------------------------------------------------ -->
+<section>
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">9</span><h2>Running it</h2></div>
+    <p class="sec-sub">From a clean checkout, in order.</p>
+
+<pre><span class="c"># 1. install</span>
+pip install -r requirements.txt
+
+<span class="c"># 2. build the catalogue CSV from the client's sheet (already committed)</span>
+python scripts/build_catalog_csv.py
+
+<span class="c"># 3. create the tables — idempotent, safe to re-run</span>
+<span class="c">#    paste schema.sql into the Supabase SQL editor</span>
+
+<span class="c"># 4. load 67 courses and embed 71 cards (~30 s)</span>
+python ingest.py
+
+<span class="c"># 5. check the whole flow without touching the DB, model or Meta</span>
+python scripts/selftest.py
+
+<span class="c"># 6. see a live transcript — nothing is sent to WhatsApp</span>
+python scripts/simulate_chat.py
+
+<span class="c"># 7. serve</span>
+uvicorn server:app --reload</pre>
+
+    <div class="col">
+      <h3>Environment</h3>
+      <p>Required: <span class="mono-inline">META_ACCESS_TOKEN</span>,
+        <span class="mono-inline">META_PHONE_NUMBER_ID</span>,
+        <span class="mono-inline">META_VERIFY_TOKEN</span>,
+        <span class="mono-inline">DATABASE_URL</span>,
+        <span class="mono-inline">GEMINI_API_KEY</span>.
+        Strongly recommended: <span class="mono-inline">META_APP_SECRET</span>.
+        Optional: <span class="mono-inline">DASHBOARD_URL</span> and
+        <span class="mono-inline">INGEST_TOKEN</span> for lead push,
+        <span class="mono-inline">CHAT_PROVIDER=claude</span> to switch models.</p>
+      <p>Deployment is unchanged — <span class="mono-inline">server.py</span> still exposes
+        <span class="mono-inline">app</span>, so the existing Render start command keeps working.
+        Run with <span class="mono-inline">WEB_CONCURRENCY=1</span>: per-phone locking is in-process.</p>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap col">
+    <p>Cruz Roja Mexicana WhatsApp training agent — internal technical documentation, prepared by Innovun.</p>
+    <p>Course data transcribed from the client's JUPTR × RC course sheet and cross-checked against the
+      accompanying data guide. Prices are the baseline per-person figures from that sheet; current
+      pricing lives in the client's separate pricing sheet.</p>
+  </div>
+</footer>

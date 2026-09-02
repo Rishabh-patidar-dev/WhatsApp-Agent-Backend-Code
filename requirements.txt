@@ -2,6 +2,12 @@ fastapi
 uvicorn[standard]
 python-dotenv
 requests
-anthropic
-google-genai
 psycopg[binary]
+psycopg-pool
+google-genai
+langchain-core
+langchain-google-genai
+langchain-text-splitters
+# Optional: only needed when CHAT_PROVIDER=claude
+anthropic
+langchain-anthropic
