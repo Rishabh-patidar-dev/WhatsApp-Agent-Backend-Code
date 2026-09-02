@@ -255,6 +255,12 @@ def main() -> None:
     check(STORE[PHONE]["language"] == "en", "language toggled to English")
     user("what courses do you have for companies?")
     check(any(k == "text" for k, _ in sent), "free text is answered by the model path")
+    check(any(k == "list" for k, _ in sent), "catalogue-intent free text also opens the tappable browse menu")
+
+    result = user("does the BLS course include a printed manual?")
+    check(any(k == "text" for k, _ in result), "a question about one specific course is still answered")
+    check(not any(k == "list" for k, _ in result), "but it does not open the browse menu")
+
     user("menu")
     check(sent[0][0] == "list", "typing 'menu' reopens the menu")
 

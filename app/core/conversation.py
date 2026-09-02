@@ -36,6 +36,20 @@ GREETING_WORDS = {"hi", "hello", "hey", "hola", "buenas", "buenos dias", "buenos
 ENROLL_WORDS = ("enroll", "enrol", "sign up", "signup", "register",
                 "inscrib", "registrar", "apuntar", "anotar")
 CANCEL_WORDS = ("cancel", "cancelar", "stop", "nevermind", "never mind", "detener")
+# Free text that asks about the catalogue in general, rather than about one
+# specific course, also opens the tappable browse menu — not just a text
+# reply — so the person can keep navigating without having to type "menu".
+CATALOG_WORDS = (
+    "what courses", "which courses", "show me the courses", "show me courses",
+    "see the courses", "list of courses", "courses do you have",
+    "courses are available", "course catalog", "course catalogue",
+    "tell me about courses", "tell me about your courses", "what programs",
+    "what programmes", "which programs", "which programmes",
+    "qué cursos", "que cursos", "cuáles cursos", "cuales cursos",
+    "cursos tienen", "cursos ofrecen", "cursos hay", "catálogo", "catalogo",
+    "lista de cursos", "ver los cursos", "ver cursos", "qué programas",
+    "que programas", "cuáles programas", "cuales programas",
+)
 QUESTION_STARTERS = (
     "what", "how", "when", "where", "why", "which", "who", "can ", "could ", "do you",
     "does ", "is there", "are there", "will ", "should ", "would ", "tell me", "explain",
@@ -161,6 +175,11 @@ def _handle(message: IncomingMessage) -> str:
 
     if any(word in lowered for word in ENROLL_WORDS):
         _start_enrollment(phone, language)
+        return language
+
+    if any(phrase in lowered for phrase in CATALOG_WORDS):
+        _answer_question(lead, text, language, with_hint=False)
+        _send_browse_menu(phone, language)
         return language
 
     # If they are looking at a course card, a follow-up like "how long is it?"
