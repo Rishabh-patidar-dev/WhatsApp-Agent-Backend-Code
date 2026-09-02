@@ -104,6 +104,11 @@ def _mask(phone: str) -> str:
 
 def _handle(message: IncomingMessage) -> str:
     phone = message.from_phone
+
+    if not leads.claim_message(message.message_id):
+        log.info("Duplicate delivery of message %s from %s — skipping", message.message_id, _mask(phone))
+        return "es"
+
     lead, is_new = leads.get_or_create(phone)
     language = lead.get("language") or "es"
 

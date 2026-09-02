@@ -11,6 +11,7 @@ Menu taps are written as `>> tap crs:HP038`; anything else is typed text.
 from __future__ import annotations
 
 import sys
+import uuid
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -60,7 +61,7 @@ def send(text: str, tap: str | None = None) -> None:
     transcript.clear()
     conversation.handle(
         IncomingMessage(
-            message_id="sim", from_phone=TEST_PHONE, text=text,
+            message_id=f"sim-{uuid.uuid4()}", from_phone=TEST_PHONE, text=text,
             contact_name="Rohit Singh", reply_id=tap,
         )
     )

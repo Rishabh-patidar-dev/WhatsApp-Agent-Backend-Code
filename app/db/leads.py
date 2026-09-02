@@ -21,6 +21,25 @@ ENROLL_STATES = (ENROLL_COURSE, ENROLL_NAME, ENROLL_EMAIL, ENROLL_PHONE, ENROLL_
 MAX_HISTORY_MESSAGES = 20
 
 
+def claim_message(message_id: str) -> bool:
+    """Atomically claims a WhatsApp message id.
+
+    Meta's webhook delivery is "at least once", so the same id can be posted
+    to us more than once. Returns True the first time an id is seen, and
+    False on every redelivery — the caller should skip processing rather than
+    reply twice.
+    """
+    if not message_id:
+        return True
+    with db.connection() as conn:
+        row = conn.execute(
+            "INSERT INTO processed_messages (message_id) VALUES (%s) "
+            "ON CONFLICT (message_id) DO NOTHING RETURNING message_id",
+            (message_id,),
+        ).fetchone()
+        return row is not None
+
+
 def get_or_create(phone: str) -> tuple[dict[str, Any], bool]:
     """Returns (lead, is_new). Atomic, so Meta's duplicate deliveries stay harmless."""
     with db.connection() as conn:

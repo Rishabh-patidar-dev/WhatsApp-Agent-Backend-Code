@@ -102,6 +102,18 @@ def fake_append_history(lead, user_text, reply_text):
 leads.append_history = fake_append_history
 leads.mark_pushed = lambda phone, error=None: None
 
+_claimed_ids: set[str] = set()
+
+
+def fake_claim_message(message_id: str) -> bool:
+    if not message_id or message_id in _claimed_ids:
+        return False
+    _claimed_ids.add(message_id)
+    return True
+
+
+leads.claim_message = fake_claim_message
+
 # --- fixture model + outbound channel ---------------------------------------
 from app.core import generation, retrieval  # noqa: E402
 
@@ -158,10 +170,15 @@ wa.send_list = record_list
 from app.core import conversation, menus  # noqa: E402
 
 
+_next_message_id = 0
+
+
 def user(text: str, tap: str | None = None) -> list[tuple[str, str]]:
+    global _next_message_id
     sent.clear()
     print(f"\n\033[96m>>> {'tap ' + tap if tap else text}\033[0m")
-    conversation.handle(IncomingMessage("sim", PHONE, text, "Rohit Singh", tap))
+    _next_message_id += 1
+    conversation.handle(IncomingMessage(f"sim{_next_message_id}", PHONE, text, "Rohit Singh", tap))
     for kind, body in sent:
         preview = body.replace("\n", "\n    ")
         print(f"  <{kind}> {preview[:400]}")
@@ -180,6 +197,11 @@ def main() -> None:
     user("Hola")
     check(sent and sent[0][0] == "text", "new contact gets a short greeting first")
     check(len(sent) > 1 and sent[1][0] == "list", "greeting is followed by the tappable main menu")
+
+    print("\n\033[96m>>> Meta redelivers the same webhook message_id\033[0m")
+    sent.clear()
+    conversation.handle(IncomingMessage(f"sim{_next_message_id}", PHONE, "Hola", "Rohit Singh", None))
+    check(sent == [], "a redelivered message_id is a no-op, not a second greeting")
 
     user("", "menu:browse")
     check(any("categor" in b.lower() or "categ" in b.lower() for _, b in sent), "browse menu lists categories")

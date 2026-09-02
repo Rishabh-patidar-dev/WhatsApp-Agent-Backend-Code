@@ -103,6 +103,18 @@ alter table leads alter column language set default 'es';
 create index if not exists leads_last_seen_idx on leads (last_seen_at desc);
 
 -- ---------------------------------------------------------------------------
+-- 3b. processed_messages — WhatsApp message ids already handled.
+-- Meta's webhook delivery is "at least once": the same message_id can arrive
+-- more than once (commonly when the recipient's phone was offline). Claiming
+-- the id here before acting on it is what makes a redelivery a no-op instead
+-- of a second reply.
+-- ---------------------------------------------------------------------------
+create table if not exists processed_messages (
+    message_id   text primary key,
+    processed_at timestamptz not null default now()
+);
+
+-- ---------------------------------------------------------------------------
 -- 4. unanswered — questions retrieval could not confidently answer.
 -- The list Cruz Roja works through to improve their own material.
 -- ---------------------------------------------------------------------------
