@@ -171,12 +171,11 @@ def _handle(message: IncomingMessage) -> str:
 def _send_greeting(phone: str, language: str, name: str | None, new: bool) -> None:
     suffix = f" {name.split()[0]}" if name else ""
     if new:
-        body = t("greeting_new", language, name=suffix, total=catalog.total_courses())
+        body = t("greeting_new", language, name=suffix)
     else:
         body = t("greeting_back", language, name=suffix)
-    menu = menus.main_menu(language)
-    wa.send_list(phone, body, menu["button_label"], menu["sections"],
-                 header=menu["header"], footer=menu["footer"])
+    wa.send_text(phone, body)
+    _send_main_menu(phone, language)
 
 
 def _send_main_menu(phone: str, language: str) -> None:

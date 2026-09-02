@@ -10,12 +10,8 @@ EN = "en"
 
 COPY: dict[str, dict[str, str]] = {
     "greeting_new": {
-        "es": "¡Hola{name}! Bienvenido a la *Coordinación de Capacitación de la Cruz Roja Mexicana*.\n\n"
-              "Puedo darte información de nuestros {total} cursos, resolver tus dudas e inscribirte.\n\n"
-              "Toca *Ver opciones* para navegar el menú, o simplemente escríbeme tu pregunta.",
-        "en": "Hello{name}! Welcome to the *Mexican Red Cross Training Coordination*.\n\n"
-              "I can tell you about our {total} courses, answer your questions and sign you up.\n\n"
-              "Tap *View options* to browse the menu, or just type your question.",
+        "es": "¡Hola{name}! Bienvenido a la *Coordinación de Capacitación de la Cruz Roja Mexicana*.",
+        "en": "Hello{name}! Welcome to the *Mexican Red Cross Training Coordination*.",
     },
     "greeting_back": {
         "es": "¡Qué gusto verte de nuevo{name}! ¿En qué te ayudo hoy?",
