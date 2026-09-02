@@ -178,7 +178,8 @@ def main() -> None:
 
     print("\n\033[1m2. Greeting and menus\033[0m")
     user("Hola")
-    check(sent and sent[0][0] == "list", "new contact gets the greeting as a tappable menu")
+    check(sent and sent[0][0] == "text", "new contact gets a short greeting first")
+    check(len(sent) > 1 and sent[1][0] == "list", "greeting is followed by the tappable main menu")
 
     user("", "menu:browse")
     check(any("categor" in b.lower() or "categ" in b.lower() for _, b in sent), "browse menu lists categories")
