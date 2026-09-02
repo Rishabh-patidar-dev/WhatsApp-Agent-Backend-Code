@@ -10,12 +10,12 @@ EN = "en"
 
 COPY: dict[str, dict[str, str]] = {
     "greeting_new": {
-        "es": "¡Hola{name}! 👋 Bienvenido a la *Coordinación de Capacitación de la Cruz Roja Mexicana*.\n\n"
+        "es": "¡Hola{name}! Bienvenido a la *Coordinación de Capacitación de la Cruz Roja Mexicana*.\n\n"
               "Puedo darte información de nuestros {total} cursos, resolver tus dudas e inscribirte.\n\n"
-              "Toca *Ver opciones* para navegar el menú, o simplemente escríbeme tu pregunta. 💬",
-        "en": "Hello{name}! 👋 Welcome to the *Mexican Red Cross Training Coordination*.\n\n"
+              "Toca *Ver opciones* para navegar el menú, o simplemente escríbeme tu pregunta.",
+        "en": "Hello{name}! Welcome to the *Mexican Red Cross Training Coordination*.\n\n"
               "I can tell you about our {total} courses, answer your questions and sign you up.\n\n"
-              "Tap *View options* to browse the menu, or just type your question. 💬",
+              "Tap *View options* to browse the menu, or just type your question.",
     },
     "greeting_back": {
         "es": "¡Qué gusto verte de nuevo{name}! ¿En qué te ayudo hoy?",
@@ -55,22 +55,22 @@ COPY: dict[str, dict[str, str]] = {
 
     "course_detail": {
         "es": "*{name}*\n"
-              "🕐 {hours} horas · {span} · {schedule}\n"
-              "📍 {delivery} · {language}\n"
-              "👥 Dirigido a: {audience}\n"
-              "📋 Requisitos: {prerequisites}\n"
-              "🎂 Edad mínima: {age} · Escolaridad: {education}\n"
-              "🎓 Al finalizar recibes: {credential}\n"
-              "💵 {price}\n\n"
+              "{hours} horas · {span} · {schedule}\n"
+              "{delivery} · {language}\n"
+              "Dirigido a: {audience}\n"
+              "Requisitos: {prerequisites}\n"
+              "Edad mínima: {age} · Escolaridad: {education}\n"
+              "Al finalizar recibes: {credential}\n"
+              "{price}\n\n"
               "{description}",
         "en": "*{name}*\n"
-              "🕐 {hours} hours · {span} · {schedule}\n"
-              "📍 {delivery} · {language}\n"
-              "👥 For: {audience}\n"
-              "📋 Requirements: {prerequisites}\n"
-              "🎂 Minimum age: {age} · Education: {education}\n"
-              "🎓 You receive: {credential}\n"
-              "💵 {price}\n\n"
+              "{hours} hours · {span} · {schedule}\n"
+              "{delivery} · {language}\n"
+              "For: {audience}\n"
+              "Requirements: {prerequisites}\n"
+              "Minimum age: {age} · Education: {education}\n"
+              "You receive: {credential}\n"
+              "{price}\n\n"
               "{description}",
     },
     "course_actions": {
@@ -82,26 +82,26 @@ COPY: dict[str, dict[str, str]] = {
     "btn_menu": {"es": "Menú principal", "en": "Main menu"},
 
     "prices_info": {
-        "es": "💵 *Precios*\n\n"
+        "es": "*Precios*\n\n"
               "Cada curso tiene su propio costo por persona, desde $400 hasta $4,500 MXN, "
               "y los diplomados se manejan por paquetes o con inscripción más mensualidades.\n\n"
               "Dime el nombre del curso que te interesa y te doy el precio exacto, "
               "o toca *Ver opciones* para explorar el catálogo.",
-        "en": "💵 *Prices*\n\n"
+        "en": "*Prices*\n\n"
               "Each course has its own price per person, from $400 to $4,500 MXN, "
               "and the diplomas are sold in packages or as an enrolment fee plus monthly instalments.\n\n"
               "Tell me which course interests you and I'll give you the exact price, "
               "or tap *View options* to explore the catalogue.",
     },
     "requirements_info": {
-        "es": "📋 *Requisitos de inscripción*\n\n"
+        "es": "*Requisitos de inscripción*\n\n"
               "Depende del curso:\n"
               "• *Cursos abiertos al público*: sin requisitos, desde 15 años.\n"
               "• *Cursos para profesionales de la salud*: ser estudiante o profesional del área, 18 años.\n"
               "• *Rescate*: personal operativo o conocimientos previos en primeros auxilios.\n"
               "• *Diplomados*: bachillerato o licenciatura terminada, según el programa.\n\n"
               "Dime qué curso te interesa y te confirmo sus requisitos exactos.",
-        "en": "📋 *Entry requirements*\n\n"
+        "en": "*Entry requirements*\n\n"
               "It depends on the course:\n"
               "• *Open public courses*: no requirements, from age 15.\n"
               "• *Health professional courses*: be a student or professional in the field, age 18.\n"
@@ -110,31 +110,31 @@ COPY: dict[str, dict[str, str]] = {
               "Tell me which course interests you and I'll confirm its exact requirements.",
     },
     "contact_info": {
-        "es": "📞 *Contacto directo*\n\n"
+        "es": "*Contacto directo*\n\n"
               "Con gusto le paso tus datos al equipo de capacitación para que te contacten.\n"
               "Escribe *inscribirme* y te tomo tus datos, o cuéntame tu duda y la registro.\n\n"
-              "⚠️ Si se trata de una *emergencia médica*, llama al *911* de inmediato.",
-        "en": "📞 *Talk to the team*\n\n"
+              "Si se trata de una *emergencia médica*, llama al *911* de inmediato.",
+        "en": "*Talk to the team*\n\n"
               "I can pass your details to the training team so they contact you.\n"
               "Type *enroll* and I'll take your details, or tell me your question and I'll log it.\n\n"
-              "⚠️ If this is a *medical emergency*, call *911* immediately.",
+              "If this is a *medical emergency*, call *911* immediately.",
     },
     "faq_info": {
-        "es": "❓ *Preguntas frecuentes*\n\n"
+        "es": "*Preguntas frecuentes*\n\n"
               "• *¿Dan constancia?* Sí. Los cursos con evaluación entregan certificación "
               "(AHA, NAEMT, CONOCER según el curso); los demás entregan constancia de asistencia.\n"
               "• *¿Hay cursos en inglés?* La mayoría se imparte en español, con inglés bajo solicitud.\n"
               "• *¿Puedo llevar a mi equipo de trabajo?* Sí, tenemos cursos para brigadas de empresa "
               "y podemos armar grupos privados.\n"
               "• *¿Cuándo son las fechas?* El equipo de Cruz Roja confirma las fechas disponibles.\n\n"
-              "Pregúntame lo que necesites saber. 💬",
-        "en": "❓ *Frequently asked questions*\n\n"
+              "Pregúntame lo que necesites saber.",
+        "en": "*Frequently asked questions*\n\n"
               "• *Do you give a certificate?* Yes. Assessed courses issue certification "
               "(AHA, NAEMT or CONOCER depending on the course); the rest issue an attendance certificate.\n"
               "• *Are courses available in English?* Most are taught in Spanish, with English on request.\n"
               "• *Can I bring my work team?* Yes — we run company brigade courses and can arrange private groups.\n"
               "• *What are the dates?* The Cruz Roja team confirms available dates.\n\n"
-              "Ask me anything you need. 💬",
+              "Ask me anything you need.",
     },
     "language_switched": {
         "es": "Listo, seguimos en *español*. ¿En qué te ayudo?",
@@ -146,8 +146,8 @@ COPY: dict[str, dict[str, str]] = {
     },
 
     "enroll_course": {
-        "es": "¡Perfecto, vamos a inscribirte! 📝\n¿Qué curso te interesa?\n\n_(Escribe *cancelar* para detener, o pregúntame lo que quieras: retomamos donde nos quedamos.)_",
-        "en": "Great, let's get you enrolled! 📝\nWhich course are you interested in?\n\n_(Type *cancel* to stop, or ask me anything — we'll pick up where we left off.)_",
+        "es": "¡Perfecto, vamos a inscribirte!\n¿Qué curso te interesa?\n\n_(Escribe *cancelar* para detener, o pregúntame lo que quieras: retomamos donde nos quedamos.)_",
+        "en": "Great, let's get you enrolled!\nWhich course are you interested in?\n\n_(Type *cancel* to stop, or ask me anything — we'll pick up where we left off.)_",
     },
     "enroll_name": {
         "es": "Anotado: *{course}*.\n¿Cuál es tu nombre completo?",
@@ -174,38 +174,38 @@ COPY: dict[str, dict[str, str]] = {
         "en": "Almost done! Which city or address are you in?",
     },
     "enroll_complete": {
-        "es": "🎉 ¡Listo, {name}! Registramos tu interés en *{course}*.\n\n"
+        "es": "¡Listo, {name}! Registramos tu interés en *{course}*.\n\n"
               "El equipo de capacitación te contactará en {email} / {phone} para confirmarte "
               "fechas, sede y forma de pago.\n\n"
-              "Mientras tanto, puedes seguir preguntándome lo que necesites. 💬",
-        "en": "🎉 All set, {name}! We've registered your interest in *{course}*.\n\n"
+              "Mientras tanto, puedes seguir preguntándome lo que necesites.",
+        "en": "All set, {name}! We've registered your interest in *{course}*.\n\n"
               "The training team will contact you at {email} / {phone} to confirm "
               "dates, location and payment.\n\n"
-              "Meanwhile, feel free to keep asking me anything. 💬",
+              "Meanwhile, feel free to keep asking me anything.",
     },
     "enroll_cancelled": {
-        "es": "Sin problema, cancelé la inscripción. Sigo aquí para lo que necesites. 💬",
-        "en": "No problem, I've cancelled the sign-up. I'm here whenever you need me. 💬",
+        "es": "Sin problema, cancelé la inscripción. Sigo aquí para lo que necesites.",
+        "en": "No problem, I've cancelled the sign-up. I'm here whenever you need me.",
     },
     "resume_note": {
-        "es": "↩️ Continuemos con tu inscripción:",
-        "en": "↩️ Back to your sign-up:",
+        "es": "Continuemos con tu inscripción:",
+        "en": "Back to your sign-up:",
     },
     "chat_hint": {
-        "es": "💡 Escribe *menú* para ver todas las opciones, o *inscribirme* para registrarte.",
-        "en": "💡 Type *menu* to see all options, or *enroll* to sign up.",
+        "es": "Escribe *menú* para ver todas las opciones, o *inscribirme* para registrarte.",
+        "en": "Type *menu* to see all options, or *enroll* to sign up.",
     },
     "unsupported_media": {
-        "es": "Por ahora sólo puedo leer mensajes de texto 🙏. Escríbeme tu pregunta o toca *menú* para ver las opciones.",
-        "en": "For now I can only read text messages 🙏. Type your question, or tap *menu* to see the options.",
+        "es": "Por ahora sólo puedo leer mensajes de texto. Escríbeme tu pregunta o toca *menú* para ver las opciones.",
+        "en": "For now I can only read text messages. Type your question, or tap *menu* to see the options.",
     },
     "rate_limited": {
-        "es": "Estoy recibiendo muchos mensajes tuyos seguidos 😅. Dame un momento y vuelve a escribirme.",
-        "en": "I'm getting a lot of messages from you at once 😅. Give me a moment and message me again.",
+        "es": "Estoy recibiendo muchos mensajes tuyos seguidos. Dame un momento y vuelve a escribirme.",
+        "en": "I'm getting a lot of messages from you at once. Give me a moment and message me again.",
     },
     "error_retry": {
-        "es": "⚠️ Algo falló de mi lado. ¿Me lo repites, por favor?",
-        "en": "⚠️ Something went wrong on my end. Could you send that again, please?",
+        "es": "Algo falló de mi lado. ¿Me lo repites, por favor?",
+        "en": "Something went wrong on my end. Could you send that again, please?",
     },
     "no_courses_in_group": {
         "es": "Aún no tengo cursos cargados en esa categoría. Toca *menú* para ver las demás.",
