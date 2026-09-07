@@ -192,8 +192,7 @@ COPY: dict[str, dict[str, str]] = {
               "Te lo pregunto porque algunos cursos piden edad mínima de 15 años y otros de 18.\n"
               "Escribe tu edad o elige una opción.",
         "en": "How old are you? (required)\n\n"
-              "I ask because some courses require a minimum age of 15 and others 18.\n"
-              "Type your age or pick an option.",
+              
     },
     "qualify_age_retry": {
         "es": "¿Me confirmas tu edad en números? (por ejemplo: 24)",
