@@ -74,16 +74,14 @@ def reset() -> None:
 
 SCRIPTED = [
     ("Hola", None),                                # greet
-    ("", "q:profile:health"),                      # qualify: who for
-    ("24", None),                                  # qualify: age, typed
+    ("Rohit Singh", None),                         # 1 of 5 - name
+    ("24", None),                                  # 2 of 5 - age
+    ("rohit@sample.com", None),                    # 3 of 5 - email
+    ("5512345678", None),                          # 4 of 5 - phone
+    ("Mandsaur MP", None),                         # 5 of 5 - address, then the menu
     ("¿cuánto cuesta el BLS?", None),              # educate
     ("", "crs:HP038"),                             # propose
-    ("", "act:enroll:HP038"),                      # confirm
-    ("Rohit Singh", None),
-    ("¿el curso incluye manual?", None),           # interruption mid-flow
-    ("rohit@sample.com", None),
-    ("5512345678", None),
-    ("Mandsaur MP", None),
+    ("", "act:enroll:HP038"),                      # confirm - one tap
 ]
 
 

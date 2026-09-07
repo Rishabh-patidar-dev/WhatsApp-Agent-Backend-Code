@@ -143,8 +143,40 @@ COPY: dict[str, dict[str, str]] = {
 
     # --- Qualify -------------------------------------------------------------
     "qualify_intro": {
-        "es": "Para recomendarte el curso correcto, permíteme dos preguntas rápidas.",
-        "en": "So I can recommend the right course, just two quick questions.",
+        "es": "Antes de empezar, tomo tus datos para poder recomendarte los cursos correctos "
+              "y que el equipo pueda contactarte. Son cinco datos rápidos.",
+        "en": "Before we start, let me take your details so I can recommend the right courses "
+              "and the team can contact you. Five quick things.",
+    },
+    "qualify_name": {
+        "es": "1 de 5 · ¿Cuál es tu nombre completo?",
+        "en": "1 of 5 · What's your full name?",
+    },
+    "qualify_email": {
+        "es": "3 de 5 · ¿Cuál es tu correo electrónico?",
+        "en": "3 of 5 · What's your email address?",
+    },
+    "qualify_email_retry": {
+        "es": "Ese correo no parece válido. ¿Lo escribes de nuevo? (ejemplo: nombre@correo.com)",
+        "en": "That email doesn't look valid. Could you type it again? (example: name@email.com)",
+    },
+    "qualify_phone": {
+        "es": "4 de 5 · ¿A qué número de 10 dígitos te contactamos? (ej. 5512345678)",
+        "en": "4 of 5 · Which 10-digit number should we reach you on? (e.g. 5512345678)",
+    },
+    "qualify_phone_retry": {
+        "es": "Ese número no parece de 10 dígitos. ¿Lo intentas de nuevo? (ej. 5512345678)",
+        "en": "That doesn't look like a 10-digit number. Could you try again? (e.g. 5512345678)",
+    },
+    "qualify_address": {
+        "es": "5 de 5 · ¿En qué ciudad o dirección te encuentras?",
+        "en": "5 of 5 · Which city or address are you in?",
+    },
+    "qualify_done": {
+        "es": "¡Listo{name}, quedaron registrados tus datos!\n\n"
+              "Ahora sí: ¿qué te gustaría hacer?",
+        "en": "All set{name}, your details are saved!\n\n"
+              "Now then: what would you like to do?",
     },
     "qualify_profile_header": {
         "es": "¿Para quién es la capacitación?",
@@ -156,10 +188,10 @@ COPY: dict[str, dict[str, str]] = {
     },
     "qualify_profile_button": {"es": "Elegir opción", "en": "Choose one"},
     "qualify_age": {
-        "es": "Gracias. ¿Cuántos años tienes?\n\n"
+        "es": "2 de 5 · ¿Cuántos años tienes?\n\n"
               "Te lo pregunto porque algunos cursos piden edad mínima de 15 años y otros de 18.\n"
               "Escribe tu edad o elige una opción.",
-        "en": "Thanks. How old are you?\n\n"
+        "en": "2 of 5 · How old are you?\n\n"
               "I ask because some courses require a minimum age of 15 and others 18.\n"
               "Type your age or pick an option.",
     },
@@ -215,6 +247,22 @@ COPY: dict[str, dict[str, str]] = {
     },
 
     # --- Confirm -------------------------------------------------------------
+    "confirm_which_course": {
+        "es": "¡Con gusto! ¿En qué curso te inscribo?\n\n"
+              "_(Escribe *cancelar* para detener, o pregúntame lo que quieras.)_",
+        "en": "Happy to! Which course shall I sign you up for?\n\n"
+              "_(Type *cancel* to stop, or ask me anything.)_",
+    },
+    "confirm_done": {
+        "es": "¡Listo, {name}! Registramos tu interés en *{course}*.\n\n"
+              "El equipo de capacitación te contactará en {email} / {phone} para confirmarte "
+              "fechas, sede y forma de pago.\n\n"
+              "¿Te muestro algo más?",
+        "en": "Done, {name}! We've registered your interest in *{course}*.\n\n"
+              "The training team will contact you at {email} / {phone} to confirm dates, "
+              "location and payment.\n\n"
+              "Anything else I can show you?",
+    },
     "confirm_intro": {
         "es": "¡Excelente elección! Sólo necesito unos datos para que el equipo te contacte.",
         "en": "Excellent choice! I just need a few details so the team can contact you.",

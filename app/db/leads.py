@@ -12,9 +12,14 @@ from app.db import client as db
 # Each stage owns the states below.
 GREET = "GREET"
 
-# Qualify — who is asking, and how old are they (the catalogue gates at 15/18).
-QUALIFY_PROFILE = "QUALIFY_PROFILE"
+# Qualify — every detail the training team needs, collected up front so the
+# course conversation afterwards is uninterrupted and enrolling is one tap.
+QUALIFY_NAME = "QUALIFY_NAME"
 QUALIFY_AGE = "QUALIFY_AGE"
+QUALIFY_EMAIL = "QUALIFY_EMAIL"
+QUALIFY_PHONE = "QUALIFY_PHONE"
+QUALIFY_ADDRESS = "QUALIFY_ADDRESS"
+QUALIFY_PROFILE = "QUALIFY_PROFILE"  # optional, reachable from the menu
 
 # Educate — browsing and answering questions. The resting state.
 EDUCATE = "EDUCATE"
@@ -29,7 +34,24 @@ CONFIRM_EMAIL = "CONFIRM_EMAIL"
 CONFIRM_PHONE = "CONFIRM_PHONE"
 CONFIRM_ADDRESS = "CONFIRM_ADDRESS"
 
-QUALIFY_STATES = (QUALIFY_PROFILE, QUALIFY_AGE)
+# The order the questions are asked in.
+QUALIFY_ORDER = (QUALIFY_NAME, QUALIFY_AGE, QUALIFY_EMAIL, QUALIFY_PHONE, QUALIFY_ADDRESS)
+QUALIFY_STATES = QUALIFY_ORDER + (QUALIFY_PROFILE,)
+# Which copy key asks for each detail.
+QUALIFY_PROMPTS = {
+    QUALIFY_NAME: "qualify_name",
+    QUALIFY_AGE: "qualify_age",
+    QUALIFY_EMAIL: "qualify_email",
+    QUALIFY_PHONE: "qualify_phone",
+    QUALIFY_ADDRESS: "qualify_address",
+}
+QUALIFY_FIELDS = {
+    QUALIFY_NAME: "name",
+    QUALIFY_AGE: "age",
+    QUALIFY_EMAIL: "email",
+    QUALIFY_PHONE: "phone",
+    QUALIFY_ADDRESS: "address",
+}
 CONFIRM_STATES = (CONFIRM_COURSE, CONFIRM_NAME, CONFIRM_EMAIL, CONFIRM_PHONE, CONFIRM_ADDRESS)
 
 # Rows written before the stages were named keep working.
@@ -47,6 +69,21 @@ MAX_HISTORY_MESSAGES = 20
 
 def normalise_state(state: str | None) -> str:
     return LEGACY_STATES.get(state or "", state or GREET)
+
+
+def is_qualified(qualification: dict | None) -> bool:
+    """True once every detail has been collected."""
+    q = qualification or {}
+    return all(q.get(field) for field in QUALIFY_FIELDS.values())
+
+
+def next_qualify_state(qualification: dict | None) -> str | None:
+    """The first detail still missing, or None when nothing is."""
+    q = qualification or {}
+    for state, field in QUALIFY_FIELDS.items():
+        if not q.get(field):
+            return state
+    return None
 
 
 def get_or_create(phone: str) -> tuple[dict[str, Any], bool]:

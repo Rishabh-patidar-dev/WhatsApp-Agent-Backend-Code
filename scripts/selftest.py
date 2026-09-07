@@ -167,6 +167,15 @@ wa.send_list = record_list
 
 from app.core import conversation, menus  # noqa: E402
 
+# The rate limiter is real and would trip partway through a scripted run of this
+# length, so it is checked once here and then stood down for the rest.
+_LIMIT_PHONE = "5215599999999"
+_limiter_trips = any(
+    conversation._rate_limited(_LIMIT_PHONE)
+    for _ in range(conversation.settings.rate_limit_messages + 2)
+)
+conversation._rate_limited = lambda phone: False
+
 
 def user(text: str, tap: str | None = None) -> list[tuple[str, str]]:
     sent.clear()
@@ -185,27 +194,48 @@ def main() -> None:
     check(all(c["price_display"] for c in COURSES), "every course has quotable price text")
     packaged = [c for c in COURSES if c["price_mxn"] is None]
     check(len(packaged) == 5, f"5 package/instalment programmes have no single price (got {len(packaged)})")
+    check(_limiter_trips,
+          f"rate limiter stops one number after {conversation.settings.rate_limit_messages}/min")
 
-    print("\n\033[1m2. Stage 1-2: greet, then qualify\033[0m")
+    print("\n\033[1m2. Stage 1-2: greet, then take every detail\033[0m")
     user("Hola")
     check(sent and sent[0][0] == "text", "new contact gets a short greeting first")
-    check(len(sent) >= 3 and sent[-1][0] == "list", "greeting leads straight into the first question")
-    check(STORE[PHONE]["state"] == "QUALIFY_PROFILE", "conversation is in the qualify stage")
+    check(STORE[PHONE]["state"] == "QUALIFY_NAME", "details are asked for straight away")
+    check(any("nombre" in b.lower() for _, b in sent), "first question is the name")
 
-    result = user("", "q:profile:health")
-    check(STORE[PHONE]["qualification"].get("profile") == "health", "profile captured from a tap")
-    check(STORE[PHONE]["state"] == "QUALIFY_AGE", "moves on to asking age")
-    check(any(k == "buttons" for k, _ in result), "age is asked with tappable bands")
-    check(any("edad" in b.lower() or "años" in b.lower() for _, b in result), "age question explains why")
+    user("Rohit Singh")
+    check(STORE[PHONE]["qualification"].get("name") == "Rohit Singh", "name stored")
+    check(STORE[PHONE]["state"] == "QUALIFY_AGE", "then age")
+    check(any(k == "buttons" for k, _ in sent), "age offers tappable bands too")
 
     user("no soy un número")
     check(STORE[PHONE]["state"] == "QUALIFY_AGE", "an unparseable age is re-asked, not accepted")
-
-    print("\n\033[1m3. Stage 3: educate, filtered by age\033[0m")
     user("24")
     check(STORE[PHONE]["qualification"].get("age") == 24, "typed age is stored exactly")
-    check(STORE[PHONE]["state"] == "EDUCATE", "qualification hands over to the educate stage")
-    check(any(k == "list" for k, _ in sent), "a tailored course list is shown")
+    check(STORE[PHONE]["state"] == "QUALIFY_EMAIL", "then email")
+
+    user("no-es-correo")
+    check(STORE[PHONE]["state"] == "QUALIFY_EMAIL", "invalid email is rejected")
+    user("rohit@sample.com")
+    check(STORE[PHONE]["state"] == "QUALIFY_PHONE", "then phone")
+
+    user("123")
+    check(STORE[PHONE]["state"] == "QUALIFY_PHONE", "short phone number is rejected")
+    user("5512345678")
+    check(STORE[PHONE]["state"] == "QUALIFY_ADDRESS", "then address")
+
+    user("menu")
+    check(STORE[PHONE]["state"] == "QUALIFY_ADDRESS", "typing 'menu' does not skip the questions")
+
+    print("\n\033[1m3. Details complete, only then the menu\033[0m")
+    result = user("Mandsaur MP")
+    q = STORE[PHONE]["qualification"]
+    check(all(q.get(f) for f in ("name", "age", "email", "phone", "address")),
+          f"every detail captured before any course talk (got {sorted(q)})")
+    check(STORE[PHONE]["state"] == "EDUCATE", "conversation moves to the course stage")
+    check(any(k == "list" for k, _ in result), "and only now is the menu offered")
+    check(any("gustaría hacer" in b.lower() or "would you like to do" in b.lower()
+              for _, b in result), "the menu asks what they want to do")
 
     print("\n\033[1m4. Age gates what gets recommended\033[0m")
     # Only 13 courses in the whole catalogue admit under-18s: the 12 public and
@@ -241,36 +271,28 @@ def main() -> None:
     check(STORE[PHONE]["state"] == "PROPOSE", "conversation is in the propose stage")
     check(STORE[PHONE]["menu_state"].get("course_id") == "HP038", "the proposed course is remembered")
 
-    print("\n\033[1m7. Stage 5: confirm, interrupted by a question\033[0m")
+    print("\n\033[1m7. Stage 5: confirm is one tap\033[0m")
     user("", "act:enroll:HP038")
-    check(STORE[PHONE]["state"] == "CONFIRM_NAME", "starting from a course skips the 'which course' step")
-    check(STORE[PHONE]["enrollment_draft"].get("course_id") == "HP038", "course is pre-filled on the draft")
+    check(len(pushed) == 1, "enrolling pushes the lead immediately, asking nothing again")
+    check(STORE[PHONE]["state"] == "EDUCATE", "and returns to the course stage")
+    check(pushed[0].get("course_id") == "HP038", "lead carries the course")
+    check(pushed[0].get("name") == "Rohit Singh"
+          and pushed[0].get("email") == "rohit@sample.com"
+          and pushed[0].get("phone") == "5512345678"
+          and pushed[0].get("address") == "Mandsaur MP",
+          "lead reuses the details taken up front")
+    check(pushed[0]["_qualification"].get("age") == 24,
+          "lead carries the age the team needs")
 
-    user("Rohit Singh")
-    check(STORE[PHONE]["state"] == "CONFIRM_EMAIL", "name captured")
-
-    before = dict(STORE[PHONE]["enrollment_draft"])
+    print("\n\033[1m7b. Enrolling without a course still asks which one\033[0m")
+    user("inscribirme")
+    check(STORE[PHONE]["state"] == "CONFIRM_COURSE", "asks which course")
     result = user("¿el curso incluye manual?")
-    check(STORE[PHONE]["state"] == "CONFIRM_EMAIL", "a question mid-flow does not advance the flow")
-    check(STORE[PHONE]["enrollment_draft"] == before, "nothing collected so far is lost")
-    check(len(result) == 2, "the question is answered and the field is asked again")
-
-    user("no-es-un-correo")
-    check(STORE[PHONE]["state"] == "CONFIRM_EMAIL", "invalid email is rejected")
-    user("rohit@sample.com")
-    check(STORE[PHONE]["state"] == "CONFIRM_PHONE", "valid email accepted")
-    user("123")
-    check(STORE[PHONE]["state"] == "CONFIRM_PHONE", "short phone number is rejected")
-    user("5512345678")
-    check(STORE[PHONE]["state"] == "CONFIRM_ADDRESS", "valid phone accepted")
-    user("Mandsaur MP")
-    check(STORE[PHONE]["state"] == "EDUCATE", "flow completes and returns to the educate stage")
-    check(len(pushed) == 1, "lead pushed to the dashboard exactly once")
-    check(pushed[0].get("email") == "rohit@sample.com" and pushed[0].get("course_id") == "HP038",
-          "lead carries the course and contact details")
-    check(pushed[0]["_qualification"].get("age") == 24
-          and pushed[0]["_qualification"].get("profile") == "health",
-          "lead carries the qualification the team needs")
+    check(STORE[PHONE]["state"] == "CONFIRM_COURSE", "a question does not advance the step")
+    check(len(result) == 2, "the question is answered and the step asked again")
+    user("Basic Life Support")
+    check(len(pushed) == 2, "naming a course completes the enrolment")
+    check(pushed[1].get("name") == "Rohit Singh", "details still not re-asked")
 
     print("\n\033[1m8. Language switch and free text\033[0m")
     user("", "act:language")

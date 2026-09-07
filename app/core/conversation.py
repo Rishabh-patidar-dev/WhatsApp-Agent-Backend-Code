@@ -2,11 +2,13 @@
 
     greet → qualify → educate → propose → confirm
 
-Greet is one line. Qualify asks two things — who the training is for, and how
-old they are — because the catalogue gates eligibility at 15 and 18, and because
-a recommendation is only worth making once you know who you are talking to.
-Educate is the resting state: browsing, questions, retrieval. Propose puts one
-specific course forward. Confirm collects the details the training team needs.
+Greet is one line. Qualify then collects every detail up front — name, age,
+email, phone, city — before any course talk begins. Age matters twice over: the
+catalogue gates eligibility at 15 and 18, so it decides what can be recommended
+at all. Only once the details are on file does the agent ask what the person
+came for. Educate is the resting state: browsing, questions, retrieval. Propose
+puts one specific course forward. Confirm needs nothing but the course, because
+everything else was already taken, so enrolling is a single tap.
 
 Two ways in, one brain: a tap arrives as a menu id and is answered from the
 database, typed text goes through retrieval and the model. Both move the same
@@ -170,13 +172,17 @@ def _handle(message: IncomingMessage) -> str:
     state = leads.normalise_state(lead.get("state"))
     qualification = leads.as_json(lead.get("qualification"))
 
-    # These work from any stage.
+    # These work from any stage — except that the menu does not open until the
+    # details are on file, so nobody skips past the questions.
     if lowered in MENU_WORDS:
-        _send_main_menu(phone, language)
+        if leads.is_qualified(qualification):
+            _send_main_menu(phone, language)
+        else:
+            _ask_next_detail(lead, language, qualification)
         return language
 
     if lowered in GREETING_WORDS and state not in leads.CONFIRM_STATES:
-        if qualification.get("age") is None or not qualification.get("profile"):
+        if not leads.is_qualified(qualification):
             _greet_and_qualify(lead, language, lead.get("name"), returning=True)
         else:
             _send_greeting(phone, language, lead.get("name"), new=False)
@@ -193,6 +199,11 @@ def _handle(message: IncomingMessage) -> str:
     # --- stage 5: confirm ---
     if state in leads.CONFIRM_STATES:
         return _handle_confirm(lead, text, lowered, language, state)
+
+    # An older lead, or one that dropped out mid-questions: finish them first.
+    if not leads.is_qualified(qualification):
+        _answer_question(lead, text, language, with_hint=False)
+        return _ask_next_detail(lead, language, qualification)
 
     # --- stages 3 & 4: educate / propose ---
     if any(word in lowered for word in ENROLL_WORDS):
@@ -219,12 +230,42 @@ def _proposed_course_id(lead: dict) -> str | None:
 # --- stage 1: greet ---------------------------------------------------------
 def _greet_and_qualify(lead: dict, language: str, name: str | None,
                        returning: bool = False) -> None:
-    """Greeting is one short line, then the first qualifying question."""
+    """Greeting is one short line, then straight into collecting the details."""
     phone = lead["phone"]
     suffix = f" {name.split()[0]}" if name else ""
     wa.send_text(phone, t("greeting_back" if returning else "greeting_new", language, name=suffix))
     wa.send_text(phone, t("qualify_intro", language))
-    _ask_profile(phone, language)
+    _ask_next_detail(lead, language, leads.as_json(lead.get("qualification")))
+
+
+def _ask_next_detail(lead: dict, language: str, qualification: dict) -> str:
+    """Asks for the first detail still missing; opens the menu once none are."""
+    phone = lead["phone"]
+    state = leads.next_qualify_state(qualification)
+
+    if state is None:
+        return _finish_qualifying(lead, language, qualification)
+
+    leads.set_state(phone, state)
+    leads.set_menu_state(phone, {"screen": state.lower()})
+
+    if state == leads.QUALIFY_AGE:
+        # Tappable bands, but a typed number is accepted and preferred.
+        wa.send_buttons(phone, t("qualify_age", language), menus.age_buttons(language))
+    else:
+        wa.send_text(phone, t(leads.QUALIFY_PROMPTS[state], language))
+    return language
+
+
+def _finish_qualifying(lead: dict, language: str, qualification: dict) -> str:
+    """Every detail is on file — now ask what they actually came for."""
+    phone = lead["phone"]
+    leads.set_state(phone, leads.EDUCATE)
+    first_name = (qualification.get("name") or "").split()
+    suffix = f" {first_name[0]}" if first_name else ""
+    wa.send_text(phone, t("qualify_done", language, name=suffix))
+    _send_main_menu(phone, language)
+    return language
 
 
 def _ask_profile(phone: str, language: str) -> None:
@@ -233,12 +274,6 @@ def _ask_profile(phone: str, language: str) -> None:
                  header=menu["header"], footer=menu["footer"])
     leads.set_state(phone, leads.QUALIFY_PROFILE)
     leads.set_menu_state(phone, {"screen": "qualify_profile"})
-
-
-def _ask_age(phone: str, language: str) -> None:
-    wa.send_buttons(phone, t("qualify_age", language), menus.age_buttons(language))
-    leads.set_state(phone, leads.QUALIFY_AGE)
-    leads.set_menu_state(phone, {"screen": "qualify_age"})
 
 
 def _send_greeting(phone: str, language: str, name: str | None, new: bool) -> None:
@@ -250,42 +285,52 @@ def _send_greeting(phone: str, language: str, name: str | None, new: bool) -> No
 # --- stage 2: qualify -------------------------------------------------------
 def _handle_qualify(lead: dict, text: str, lowered: str, language: str,
                     state: str, qualification: dict) -> str:
+    """One detail per message, with the field validated before it is stored."""
     phone = lead["phone"]
 
-    # A question instead of an answer: answer it, then ask again.
+    # A question instead of an answer: answer it, then ask the same thing again.
     if is_question(text):
         _answer_question(lead, text, language, with_hint=False)
-        _repeat_qualify(phone, language, state)
-        return language
+        return _ask_next_detail(lead, language, qualification)
 
     if state == leads.QUALIFY_PROFILE:
         profile = match_profile(text)
         if not profile:
-            # Not recognisable as a profile — treat it as a question about courses
-            # rather than nagging, then ask again.
             _answer_question(lead, text, language, with_hint=False)
-            _repeat_qualify(phone, language, state)
+            _ask_profile(phone, language)
             return language
         qualification["profile"] = profile
         leads.set_qualification(phone, qualification)
-        _ask_age(phone, language)
-        return language
+        return _educate(lead, language, qualification)
 
-    # QUALIFY_AGE
-    age = parse_age(text)
-    if age is None:
-        wa.send_text(phone, t("qualify_age_retry", language))
-        return language
-    qualification["age"] = age
+    if state == leads.QUALIFY_NAME:
+        qualification["name"] = text
+        leads.set_name(phone, text)
+
+    elif state == leads.QUALIFY_AGE:
+        age = parse_age(text)
+        if age is None:
+            wa.send_text(phone, t("qualify_age_retry", language))
+            return language
+        qualification["age"] = age
+
+    elif state == leads.QUALIFY_EMAIL:
+        if not EMAIL_RE.match(text):
+            wa.send_text(phone, t("qualify_email_retry", language))
+            return language
+        qualification["email"] = text
+
+    elif state == leads.QUALIFY_PHONE:
+        if len(to_local_phone(text)) != 10:
+            wa.send_text(phone, t("qualify_phone_retry", language))
+            return language
+        qualification["phone"] = text
+
+    elif state == leads.QUALIFY_ADDRESS:
+        qualification["address"] = text
+
     leads.set_qualification(phone, qualification)
-    return _educate(lead, language, qualification)
-
-
-def _repeat_qualify(phone: str, language: str, state: str) -> None:
-    if state == leads.QUALIFY_PROFILE:
-        _ask_profile(phone, language)
-    else:
-        _ask_age(phone, language)
+    return _ask_next_detail(lead, language, qualification)
 
 
 def _handle_qualify_tap(lead: dict, action: menus.Action, language: str) -> str:
@@ -296,8 +341,10 @@ def _handle_qualify_tap(lead: dict, action: menus.Action, language: str) -> str:
         profile = action.course_id or "browsing"
         qualification["profile"] = profile
         leads.set_qualification(phone, qualification)
-        _ask_age(phone, language)
-        return language
+        # Reached from the menu, after the details are already on file.
+        if leads.is_qualified(qualification):
+            return _educate(lead, language, qualification)
+        return _ask_next_detail(lead, language, qualification)
 
     if action.value == "age":
         band = action.course_id
@@ -306,7 +353,7 @@ def _handle_qualify_tap(lead: dict, action: menus.Action, language: str) -> str:
         qualification["age"] = age
         qualification["age_band"] = band
         leads.set_qualification(phone, qualification)
-        return _educate(lead, language, qualification)
+        return _ask_next_detail(lead, language, qualification)
 
     _send_main_menu(phone, language)
     return language
@@ -474,19 +521,52 @@ def _answer_question(
 
 # --- stage 5: confirm -------------------------------------------------------
 def _start_confirm(lead: dict, language: str, course_id: str | None = None) -> None:
+    """Contact details were taken up front, so this only needs the course."""
     phone = lead["phone"]
+    qualification = leads.as_json(lead.get("qualification"))
     course = catalog.get_course(course_id) if course_id else None
-    wa.send_text(phone, t("confirm_intro", language))
+
+    if not leads.is_qualified(qualification):
+        # Details were never finished (an older lead, or an interrupted start).
+        _ask_next_detail(lead, language, qualification)
+        return
 
     if course:
-        name = course["name_es"] if language == "es" else course["name_en"]
-        leads.set_draft(phone, {"course": name, "course_id": course["course_id"]})
-        leads.set_state(phone, leads.CONFIRM_NAME)
-        wa.send_text(phone, t("enroll_name", language, course=name))
-    else:
-        leads.set_draft(phone, {})
-        leads.set_state(phone, leads.CONFIRM_COURSE)
-        wa.send_text(phone, t("enroll_course", language))
+        _complete_enrollment(lead, language, course, qualification)
+        return
+
+    leads.set_draft(phone, {})
+    leads.set_state(phone, leads.CONFIRM_COURSE)
+    wa.send_text(phone, t("confirm_which_course", language))
+
+
+def _complete_enrollment(lead: dict, language: str, course: dict, qualification: dict) -> None:
+    """Everything is known, so the lead goes straight to the dashboard."""
+    phone = lead["phone"]
+    course_name = course["name_es"] if language == "es" else course["name_en"]
+    draft = {
+        "course": course_name,
+        "course_id": course["course_id"],
+        "name": qualification.get("name"),
+        "email": qualification.get("email"),
+        "phone": qualification.get("phone"),
+        "address": qualification.get("address"),
+    }
+
+    # State moves before the push so a duplicate delivery cannot double-submit.
+    leads.set_state(phone, leads.EDUCATE)
+    leads.set_draft(phone, {})
+    dashboard.push_lead(phone, draft, language, qualification=qualification)
+
+    first_name = (qualification.get("name") or "").split()
+    wa.send_text(phone, t(
+        "confirm_done", language,
+        name=first_name[0] if first_name else "",
+        course=course_name,
+        email=qualification.get("email", ""),
+        phone=qualification.get("phone", ""),
+    ))
+    _send_main_menu(phone, language)
 
 
 def _handle_confirm(lead: dict, text: str, lowered: str, language: str, state: str) -> str:
@@ -509,15 +589,25 @@ def _handle_confirm(lead: dict, text: str, lowered: str, language: str, state: s
         return language
 
     if state == leads.CONFIRM_COURSE:
+        qualification = leads.as_json(lead.get("qualification"))
         matches = catalog.search_by_name(text, limit=1)
         if matches:
-            draft["course"] = matches[0]["name_es"] if language == "es" else matches[0]["name_en"]
-            draft["course_id"] = matches[0]["course_id"]
-        else:
-            draft["course"] = text  # keep what they typed; the team can resolve it
-        leads.set_draft(phone, draft)
-        leads.set_state(phone, leads.CONFIRM_NAME)
-        wa.send_text(phone, t("enroll_name", language, course=draft["course"]))
+            _complete_enrollment(lead, language, matches[0], qualification)
+            return language
+        # Not a course we recognise: keep what they typed so the team can resolve it.
+        draft = {"course": text, "name": qualification.get("name"),
+                 "email": qualification.get("email"), "phone": qualification.get("phone"),
+                 "address": qualification.get("address")}
+        leads.set_state(phone, leads.EDUCATE)
+        leads.set_draft(phone, {})
+        dashboard.push_lead(phone, draft, language, qualification=qualification)
+        first_name = (qualification.get("name") or "").split()
+        wa.send_text(phone, t(
+            "confirm_done", language,
+            name=first_name[0] if first_name else "", course=text,
+            email=qualification.get("email", ""), phone=qualification.get("phone", ""),
+        ))
+        _send_main_menu(phone, language)
         return language
 
     if state == leads.CONFIRM_NAME:
