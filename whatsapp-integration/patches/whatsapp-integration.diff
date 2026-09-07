@@ -1,0 +1,605 @@
+--- a/.env.example
++++ b/.env.example
+@@ -37,10 +37,38 @@
+ S3_REGION=
+ 
+ # ── Meta Cloud API ────────────────────────────────────────────
++# Leave all four blank to run without a WhatsApp channel: the webhook is then
++# not mounted and the worker registers a handler that fails loudly. Set any one
++# of them and all four are required — a half-configured channel would serve an
++# endpoint that cannot verify a signature.
++#
++# App dashboard → WhatsApp → API Setup. This is the ID, not the phone number.
+ WHATSAPP_PHONE_NUMBER_ID=
++# A permanent System User token (Business Settings → Users → System Users).
++# The token shown on the API Setup page is a 24-hour test token.
+ WHATSAPP_ACCESS_TOKEN=
++# Any string you invent. Meta echoes it back once, during the GET handshake,
++# and you paste the same value into the webhook configuration form.
+ WHATSAPP_VERIFY_TOKEN=
++# App dashboard → Settings → Basic → App Secret. Signs every delivery. Required:
++# without it the public webhook URL accepts fabricated customer messages.
+ WHATSAPP_APP_SECRET=
++# Pinned deliberately. Meta retires a version about two years after release and
++# a retired one starts answering 400 with no deprecation warning.
++WHATSAPP_API_VERSION=v21.0
++# Prior messages replayed into the prompt. Six is three exchanges.
++WHATSAPP_HISTORY_TURNS=6
++# Longer questions are truncated, never rejected.
++WHATSAPP_MAX_QUERY_CHARS=1000
++# Turns per minute per phone number. Each is one embedding + one Claude call.
++WHATSAPP_RATE_LIMIT_PER_MINUTE=12
++# Per Graph API request attempt.
++WHATSAPP_REQUEST_TIMEOUT_SECONDS=15
++# Largest webhook body accepted.
++WHATSAPP_BODY_LIMIT=1mb
++# Replies generated at once by one worker. Above 1, two messages sent seconds
++# apart by the same person may be answered out of order.
++WHATSAPP_WORKER_CONCURRENCY=3
+ 
+ # ── Dashboard auth ────────────────────────────────────────────
+ NEXTAUTH_SECRET=
+--- a/apps/api/src/container.ts
++++ b/apps/api/src/container.ts
+@@ -5,10 +5,13 @@
+   getDatabaseConfig,
+   getEmbeddingConfig,
+   getLlmConfig,
++  getWhatsAppConfig,
++  isWhatsAppConfigured,
+   createLogger,
+   describeError,
+   type ApiConfig,
+   type Logger,
++  type WhatsAppConfig,
+ } from '@rag/shared';
+ import { JOB_INGEST_DOCUMENT, JOB_WHATSAPP_REPLY } from '@rag/core';
+ import type { CardSearchPort, EmbeddingProvider, LlmProvider, QueuePublisher } from '@rag/core';
+@@ -39,6 +42,18 @@
+  * If that script passes and this does not, the difference is here.
+  */
+ 
++/**
++ * The WhatsApp channel, when this deployment has one.
++ *
++ * Only the validated config: the API enqueues, it does not send, so it has no
++ * use for a Graph API client. The worker builds one — it is the process that
++ * talks to Meta. When an admin "send a manual reply" route lands, this is where
++ * its client belongs.
++ */
++export interface WhatsAppRuntime {
++  config: WhatsAppConfig;
++}
++
+ export interface Container {
+   config: ApiConfig;
+   logger: Logger;
+@@ -48,6 +63,8 @@
+   search: PrismaCardSearch;
+   verification: VerificationPort;
+   queue: QueuePublisher;
++  /** Null when no WHATSAPP_* keys are set — the webhook is then not mounted. */
++  whatsapp: WhatsAppRuntime | null;
+   /** Set once the startup checks have passed. Read by /health/ready. */
+   ready: boolean;
+   readinessError: string | null;
+@@ -114,6 +131,14 @@
+   const search = new PrismaCardSearch({ db });
+   const verification = new PrismaVerification(db);
+ 
++  // Presence decides whether the webhook is mounted; validity is decided by the
++  // schema, which throws a ConfigError naming the missing key. A deployment
++  // with three of the four secrets fails at boot rather than serving an
++  // endpoint that cannot verify a signature.
++  const whatsapp: WhatsAppRuntime | null = isWhatsAppConfigured()
++    ? { config: getWhatsAppConfig() }
++    : null;
++
+   // pg-boss on DIRECT_URL. The API only publishes — the worker consumes — but
+   // it still needs the direct endpoint, for the same advisory-lock reason.
+   const queue = new PgBossQueue({
+@@ -131,6 +156,7 @@
+     search,
+     verification,
+     queue,
++    whatsapp,
+     ready: false,
+     readinessError: null,
+     async shutdown() {
+@@ -166,6 +192,7 @@
+       embedDims: embeddingConfig.EMBEDDING_DIMENSIONS,
+       llmModel: llmConfig.LLM_MODEL,
+       allowedOrigins: config.WIDGET_ALLOWED_ORIGINS,
++      whatsapp: whatsapp ? whatsapp.config.WHATSAPP_PHONE_NUMBER_ID : 'disabled',
+     });
+   } catch (error) {
+     container.readinessError = describeError(error);
+--- a/apps/api/src/express.d.ts
++++ b/apps/api/src/express.d.ts
+@@ -15,6 +15,12 @@
+       requestId?: string;
+       /** Child logger bound to requestId. Prefer this over container.logger. */
+       log?: Logger;
++      /**
++       * Set by rawJsonBody on the WhatsApp webhook only. The exact bytes Meta
++       * sent, kept because the signature is an HMAC over them and a
++       * re-serialised body produces a different digest.
++       */
++      rawBody?: Buffer;
+       /** Set by requireWidgetKey once the key and origin have both passed. */
+       widgetKey?: {
+         id: string;
+--- a/apps/api/src/server.ts
++++ b/apps/api/src/server.ts
+@@ -8,6 +8,7 @@
+ import { errorHandler, notFoundHandler, requestContext } from './middleware/errorHandler.js';
+ import { chatRouter } from './routes/chat.js';
+ import { healthRouter } from './routes/health.js';
++import { whatsappRouter } from './routes/whatsapp.js';
+ import { widgetRouter } from './routes/widget.js';
+ 
+ /**
+@@ -75,14 +76,18 @@
+     }),
+   );
+ 
+-  // ── WhatsApp webhook mounts HERE, before express.json ──────────────────
++  // ── WhatsApp webhook — mounted HERE, before express.json ───────────────
+   //
+-  // TODO (WhatsApp channel): the Meta signature is an HMAC over the *raw*
+-  // request body. Once express.json has parsed and re-serialised it, the bytes
+-  // differ and the signature never matches — the single most common
+-  // integration bug on this endpoint. So `/webhooks/whatsapp` needs its own
+-  // `express.json({ verify })` mounted before the global parser below, per
+-  // PLAN.md §10. Mount it above this line, not under it.
++  // The Meta signature is an HMAC over the *raw* request body. Once
++  // express.json has parsed and re-serialised it the bytes differ and the
++  // signature never matches — the single most common integration bug on this
++  // endpoint, and one that presents as "our app secret is wrong". So the
++  // router brings its own `express.json({ verify })` (see middleware/rawBody.ts)
++  // and must be mounted above the global parser, never under it.
++  //
++  // It is also outside CORS and the widget key by design: the caller is Meta's
++  // server, not a browser, and it authenticates with a signature instead.
++  app.use(whatsappRouter(container));
+ 
+   app.use(express.json({ limit: config.API_BODY_LIMIT }));
+ 
+--- a/apps/worker/package.json
++++ b/apps/worker/package.json
+@@ -10,6 +10,7 @@
+     "typecheck": "tsc --noEmit -p tsconfig.json"
+   },
+   "dependencies": {
++    "@rag/channels": "*",
+     "@rag/core": "*",
+     "@rag/db": "*",
+     "@rag/providers": "*",
+--- a/apps/worker/src/index.ts
++++ b/apps/worker/src/index.ts
+@@ -1,6 +1,7 @@
+ import { fileURLToPath } from 'node:url';
+ import { JOB_INGEST_DOCUMENT, JOB_WHATSAPP_REPLY, type QueueJob } from '@rag/core';
+ import type { IngestDocumentJob } from '@rag/core';
++import { WhatsAppClient, type WhatsAppReplyJob } from '@rag/channels';
+ import { createDbClient } from '@rag/db';
+ import {
+   createLogger,
+@@ -8,9 +9,20 @@
+   getAppConfig,
+   getDatabaseConfig,
+   getEmbeddingConfig,
++  getLlmConfig,
++  getWhatsAppConfig,
++  isWhatsAppConfigured,
+ } from '@rag/shared';
+-import { GoogleEmbeddingProvider, PgBossQueue, PrismaCardStore } from '@rag/providers';
++import {
++  AnthropicLlmProvider,
++  GoogleEmbeddingProvider,
++  PgBossQueue,
++  PrismaCardSearch,
++  PrismaCardStore,
++  PrismaVerification,
++} from '@rag/providers';
+ import { makeIngestDocumentHandler } from './jobs/ingestDocument.js';
++import { makeWhatsAppReplyHandler } from './jobs/whatsappReply.js';
+ 
+ /**
+  * The queue runtime.
+@@ -91,27 +103,82 @@
+ 
+   // ── whatsapp ──────────────────────────────────────────────────────────
+   //
+-  // TODO (WhatsApp channel): generate and send the reply. The pieces are all
+-  // present — `loadTurnContext`, `answer({ channel: 'WHATSAPP' })`,
+-  // `persistTurn`, and the 24-hour window check before the Graph API send. The
+-  // shape is `apps/api/src/routes/chat.ts` without the stream.
+-  //
+-  // Registered as a throwing stub rather than left unregistered on purpose: an
+-  // unregistered queue accepts jobs and never runs them, which is the silent
+-  // failure this file exists to warn about. Throwing means Meta's message lands
+-  // in the dead-letter queue after its retries, where somebody can see it.
+-  await queue.work<Record<string, unknown>>(
+-    JOB_WHATSAPP_REPLY,
+-    async (job: QueueJob<Record<string, unknown>>) => {
+-      logger.error('whatsapp.reply is not implemented', { jobId: job.id });
+-      throw new Error('whatsapp.reply handler not implemented');
+-    },
+-    { concurrency: 1 },
+-  );
++  // The handler is registered either way. An unregistered queue accepts jobs
++  // and never runs them — no error, nothing in any log, and the webhook keeps
++  // answering Meta with a cheerful 200 the whole time. Registering a throwing
++  // stub instead means an unconfigured deployment sends the message to the
++  // dead-letter queue after its retries, where somebody can see it.
++  if (isWhatsAppConfigured()) {
++    const whatsappConfig = getWhatsAppConfig();
++
++    // The LLM is new to this process — ingest never needed one — and it is
++    // read here rather than at the top of main() so that a worker running
++    // without a WhatsApp channel still starts with no Anthropic key set.
++    // Narrowed rather than asserted, for the same reason as in the API
++    // container: the schema's superRefine guarantees the key at runtime but
++    // the type stays `string | undefined`, and pointing LLM_PROVIDER at
++    // bedrock should fail with a sentence.
++    const llmConfig = getLlmConfig();
++    const anthropicKey = llmConfig.ANTHROPIC_API_KEY;
++    if (!anthropicKey) {
++      throw new Error(
++        `LLM_PROVIDER is "${llmConfig.LLM_PROVIDER}" and no ANTHROPIC_API_KEY is set. ` +
++          'The Bedrock adapter is not implemented yet (packages/providers/src/llm/bedrock.ts).',
++      );
++    }
++
++    const client = new WhatsAppClient({
++      phoneNumberId: whatsappConfig.WHATSAPP_PHONE_NUMBER_ID,
++      accessToken: whatsappConfig.WHATSAPP_ACCESS_TOKEN,
++      apiVersion: whatsappConfig.WHATSAPP_API_VERSION,
++      timeoutMs: whatsappConfig.WHATSAPP_REQUEST_TIMEOUT_SECONDS * 1000,
++      onRetry: ({ attemptNumber, retriesLeft, error }) =>
++        logger.warn('whatsapp send retry', {
++          attemptNumber,
++          retriesLeft,
++          reason: describeError(error),
++        }),
++    });
++
++    await queue.work<WhatsAppReplyJob>(
++      JOB_WHATSAPP_REPLY,
++      makeWhatsAppReplyHandler({
++        db,
++        client,
++        search: new PrismaCardSearch({ db }),
++        verification: new PrismaVerification(db),
++        embeddings,
++        llm: new AnthropicLlmProvider({
++          apiKey: anthropicKey,
++          model: llmConfig.LLM_MODEL,
++          workspaceId: llmConfig.ANTHROPIC_WORKSPACE_ID,
++          onRetry: ({ attemptNumber, retriesLeft, error }) =>
++            logger.warn('llm retry', { attemptNumber, retriesLeft, reason: describeError(error) }),
++        }),
++        logger,
++        historyTurns: whatsappConfig.WHATSAPP_HISTORY_TURNS,
++        maxQueryChars: whatsappConfig.WHATSAPP_MAX_QUERY_CHARS,
++        rateLimitPerMinute: whatsappConfig.WHATSAPP_RATE_LIMIT_PER_MINUTE,
++      }),
++      { concurrency: whatsappConfig.WHATSAPP_WORKER_CONCURRENCY },
++    );
++  } else {
++    logger.warn('WhatsApp channel disabled — WHATSAPP_* config is absent; replies will fail loudly');
++
++    await queue.work<Record<string, unknown>>(
++      JOB_WHATSAPP_REPLY,
++      async (job: QueueJob<Record<string, unknown>>) => {
++        logger.error('whatsapp.reply received but the channel is not configured', { jobId: job.id });
++        throw new Error('whatsapp.reply received but WHATSAPP_* config is absent');
++      },
++      { concurrency: 1 },
++    );
++  }
+ 
+   logger.info('worker started', {
+     queues: [JOB_INGEST_DOCUMENT, JOB_WHATSAPP_REPLY],
+     embedModel: embeddingConfig.EMBEDDING_MODEL,
++    whatsapp: isWhatsAppConfigured() ? 'enabled' : 'disabled',
+   });
+ 
+   // ── graceful shutdown ─────────────────────────────────────────────────
+--- a/package.json
++++ b/package.json
+@@ -40,6 +40,7 @@
+     "dev:api": "npm run dev -w @rag/api",
+     "dev:worker": "npm run dev -w @rag/worker",
+     "checkpoint:worker": "tsx scripts/checkpoint-worker.ts",
++    "checkpoint:10": "tsx scripts/checkpoint10-whatsapp.ts",
+     "test:page": "node scripts/serve-test-page.mjs"
+   },
+   "devDependencies": {
+--- a/packages/channels/package.json
++++ b/packages/channels/package.json
+@@ -10,7 +10,8 @@
+     "./protocol": "./src/web/protocol.ts"
+   },
+   "scripts": {
+-    "typecheck": "tsc --noEmit -p tsconfig.json"
++    "typecheck": "tsc --noEmit -p tsconfig.json",
++    "test": "vitest run"
+   },
+   "dependencies": {
+     "@rag/core": "*",
+--- a/packages/channels/src/index.ts
++++ b/packages/channels/src/index.ts
+@@ -18,7 +18,48 @@
+ export { WEB_TARGET_CHARS, formatForWeb } from './web/format.js';
+ 
+ // ── whatsapp ───────────────────────────────────────────────────────────
+-// TODO (WhatsApp channel): export parseWebhook, formatForWhatsApp transport,
+-// the 24-hour window helper and the Graph API client from ./whatsapp/*.
+-// Those files are still empty; exporting them here now would break typecheck
+-// for everybody rather than only for whoever is writing them.
++export {
++  isWhatsAppWebhook,
++  parseWebhook,
++  toReplyJob,
++} from './whatsapp/parseWebhook.js';
++export type {
++  DeliveryStatus,
++  InboundKind,
++  InboundMessage,
++  ParsedWebhook,
++  StatusUpdate,
++  WhatsAppReplyJob,
++} from './whatsapp/parseWebhook.js';
++
++export {
++  WHATSAPP_LIMITS,
++  WHATSAPP_MAX_CHARS,
++  WHATSAPP_TARGET_CHARS,
++  clip,
++  clipButtons,
++  clipSections,
++  formatForWhatsApp,
++  splitForSend,
++  toWhatsAppMarkup,
++  truncateOnBoundary,
++} from './whatsapp/format.js';
++export type { ListRow, ListSection, ReplyButton } from './whatsapp/format.js';
++
++export {
++  CUSTOMER_SERVICE_WINDOW_MS,
++  META_ERROR_REENGAGEMENT,
++  WhatsAppWindowClosedError,
++  assertWindowOpen,
++  formatRemaining,
++  windowState,
++} from './whatsapp/window.js';
++export type { WindowState } from './whatsapp/window.js';
++
++export { WhatsAppApiError, WhatsAppClient } from './whatsapp/client.js';
++export type {
++  SendResult,
++  SendTemplateInput,
++  TemplateVariable,
++  WhatsAppClientOptions,
++} from './whatsapp/client.js';
+--- a/packages/providers/src/generation/persistTurn.ts
++++ b/packages/providers/src/generation/persistTurn.ts
+@@ -26,6 +26,15 @@
+   channel: 'WHATSAPP' | 'WEB';
+   userQuery: string;
+   result: AnswerResult;
++  /**
++   * Meta's id for the inbound message, on the WhatsApp path.
++   *
++   * `Message.waMessageId` is unique, and writing it inside this transaction is
++   * what makes that constraint a real idempotency guard: two workers handling
++   * the same redelivered webhook end with one transaction rolled back rather
++   * than two identical replies sent. Absent for web, which has no such id.
++   */
++  waMessageId?: string | null;
+ }
+ 
+ export interface PersistTurnResult {
+@@ -53,6 +62,7 @@
+   channel,
+   userQuery,
+   result,
++  waMessageId,
+ }: PersistTurnInput): Promise<PersistTurnResult> {
+   return db.$transaction(async (tx) => {
+     const now = new Date();
+@@ -65,6 +75,7 @@
+         language: 'es',
+         detectedIntent: result.intents[0] ?? null,
+         resolvedCourseIds: result.resolution.candidates.map((c) => c.courseId),
++        ...(waMessageId ? { waMessageId } : {}),
+       },
+       select: { id: true },
+     });
+--- a/packages/shared/src/config.ts
++++ b/packages/shared/src/config.ts
+@@ -191,12 +191,68 @@
+     ),
+   }));
+ 
++/**
++ * Meta's WhatsApp Cloud API.
++ *
++ * Validated lazily like every other section, and — unlike the others — the
++ * channel it configures is optional. A developer working on retrieval should
++ * be able to boot the API without holding a Meta app, so `isWhatsAppConfigured`
++ * decides whether the webhook is mounted at all and this schema decides whether
++ * the values are usable once it is.
++ *
++ * ── WHATSAPP_APP_SECRET is required, not optional ────────────────────────
++ *
++ * The tempting alternative is to skip signature verification when the secret is
++ * absent, so local testing is easy. That leaves a public URL that anyone can
++ * POST a fabricated customer message to — one that gets answered, billed, and
++ * written into a real contact's history. The convenient version is not offered:
++ * `npm run checkpoint:10` signs its own test payloads, which is what the
++ * convenience was for.
++ */
++const WhatsAppSchema = z.object({
++  /** WhatsApp → API Setup in the App dashboard. Not the phone number itself. */
++  WHATSAPP_PHONE_NUMBER_ID: requiredString('WHATSAPP_PHONE_NUMBER_ID'),
++  /** A permanent System User token. The dashboard's test token expires in 24h. */
++  WHATSAPP_ACCESS_TOKEN: requiredString('WHATSAPP_ACCESS_TOKEN'),
++  /** Our own string, echoed back to Meta during the GET handshake. */
++  WHATSAPP_VERIFY_TOKEN: requiredString('WHATSAPP_VERIFY_TOKEN'),
++  /** App → Settings → Basic. Signs every delivery; see verifyMetaSignature.ts. */
++  WHATSAPP_APP_SECRET: requiredString('WHATSAPP_APP_SECRET'),
++  /**
++   * Pinned, never "latest". Meta retires a version roughly two years after
++   * release and a retired one starts answering 400 with no warning, so this is
++   * a value somebody bumps deliberately after reading the changelog.
++   */
++  WHATSAPP_API_VERSION: z.string().default('v21.0'),
++  /** Prior messages replayed into the prompt. Six is three exchanges. */
++  WHATSAPP_HISTORY_TURNS: z.coerce.number().int().nonnegative().max(40).default(6),
++  /** Longer questions are truncated, never rejected. */
++  WHATSAPP_MAX_QUERY_CHARS: z.coerce.number().int().positive().default(1000),
++  /** Turns per minute per phone number. Each is one embedding + one model call. */
++  WHATSAPP_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(12),
++  /** Per Graph API request attempt. */
++  WHATSAPP_REQUEST_TIMEOUT_SECONDS: z.coerce.number().int().positive().default(15),
++  /** Largest webhook body accepted. Meta's batches are small. */
++  WHATSAPP_BODY_LIMIT: z.string().default('1mb'),
++  /**
++   * Replies generated at once by one worker process.
++   *
++   * pg-boss gives no per-recipient ordering guarantee, so above 1 two messages
++   * sent seconds apart by the same person can be answered out of order. Three
++   * is the trade made here: a turn takes three to five seconds, and at 1 a
++   * single slow question queues everybody behind it. Set it to 1 for strict
++   * ordering, or partition by phone number when that stops being enough.
++   */
++  WHATSAPP_WORKER_CONCURRENCY: z.coerce.number().int().positive().max(50).default(3),
++});
++
+ export type AppConfig = z.infer<typeof AppSchema>;
+ export type ApiConfig = z.infer<typeof ApiSchema>;
+ export type DatabaseConfig = z.infer<typeof DatabaseSchema>;
+ export type LlmConfig = z.infer<typeof LlmSchema>;
+ export type EmbeddingConfig = z.infer<typeof EmbeddingSchema>;
+ export type StorageConfig = z.infer<typeof StorageSchema>;
++export type WhatsAppConfig = z.infer<typeof WhatsAppSchema>;
+ 
+ export interface IngestionConfig {
+   coursesPath: string;
+@@ -232,6 +288,30 @@
+ export const getLlmConfig = (): LlmConfig => section('llm', LlmSchema);
+ export const getEmbeddingConfig = (): EmbeddingConfig => section('embedding', EmbeddingSchema);
+ export const getStorageConfig = (): StorageConfig => section('storage', StorageSchema);
++export const getWhatsAppConfig = (): WhatsAppConfig => section('whatsapp', WhatsAppSchema);
++
++/**
++ * Whether this deployment has a WhatsApp channel at all.
++ *
++ * Presence, not validity: `getWhatsAppConfig()` is what says whether the values
++ * are usable, and it throws a ConfigError naming the missing key when they are
++ * not. This is only the question the API asks before deciding to mount the
++ * webhook, so that a half-configured deployment fails loudly rather than
++ * serving a webhook that cannot verify a signature.
++ *
++ * The four keys below are the ones with no default. If any is present, the
++ * operator intended a WhatsApp channel and a missing sibling is a mistake worth
++ * a startup error rather than a silently disabled endpoint.
++ */
++export function isWhatsAppConfigured(): boolean {
++  ensureDotenv();
++  return [
++    'WHATSAPP_PHONE_NUMBER_ID',
++    'WHATSAPP_ACCESS_TOKEN',
++    'WHATSAPP_VERIFY_TOKEN',
++    'WHATSAPP_APP_SECRET',
++  ].some((key) => (process.env[key] ?? '').trim() !== '');
++}
+ 
+ export function getIngestionConfig(): IngestionConfig {
+   const raw = section('ingestion', IngestionSchema);
+@@ -248,8 +328,9 @@
+   dotenvLoaded = false;
+ }
+ 
+-// TODO (WhatsApp channel, dashboard): Meta Cloud API and NextAuth sections.
+-// The keys already exist in .env.example; they are not validated here yet
+-// because nothing reads them. Add them as `getWhatsAppConfig()` and
+-// `getAuthConfig()` following the pattern above — lazily, so a script that only
+-// embeds a string still starts without the WhatsApp secrets present.
++// TODO (dashboard): the NextAuth section. The keys already exist in
++// .env.example; they are not validated here yet because nothing reads them.
++// Add them as `getAuthConfig()` following the pattern above — lazily, so a
++// script that only embeds a string still starts without them present.
++//
++// The WhatsApp section above is the worked example of that pattern.
+--- a/packages/shared/src/errors.ts
++++ b/packages/shared/src/errors.ts
+@@ -22,6 +22,7 @@
+ export type ErrorCode =
+   | 'bad_request'
+   | 'invalid_api_key'
++  | 'invalid_signature'
+   | 'origin_not_allowed'
+   | 'rate_limited'
+   | 'not_found'
+@@ -108,6 +109,30 @@
+       ...options,
+     });
+   }
++}
++
++/**
++ * A webhook whose signature did not verify.
++ *
++ * Separate from `InvalidApiKeyError` because the two are answered differently
++ * and by different people: a bad widget key is a site owner's configuration
++ * problem, a bad webhook signature is either a wrong app secret or somebody
++ * posting fabricated customer messages at a public URL. Conflating them means
++ * the second one is invisible in a log filtered on the first.
++ *
++ * 403 rather than 401: there is no authentication to retry with. The public
++ * message is never rendered anywhere — Meta is the only caller — but it is
++ * filled in rather than left to the generic default, because a human hitting
++ * this endpoint by hand deserves a sentence that says what went wrong.
++ */
++export class WebhookSignatureError extends AppError {
++  override readonly name = 'WebhookSignatureError';
++  constructor(message: string, options: AppErrorOptions = {}) {
++    super(403, 'invalid_signature', message, {
++      publicMessage: 'La firma del webhook no es válida.',
++      ...options,
++    });
++  }
+ }
+ 
+ export class NotFoundError extends AppError {
+--- a/packages/shared/src/index.ts
++++ b/packages/shared/src/index.ts
+@@ -7,6 +7,8 @@
+   getIngestionConfig,
+   getLlmConfig,
+   getStorageConfig,
++  getWhatsAppConfig,
++  isWhatsAppConfigured,
+   resetConfigCache,
+ } from './config.js';
+ export type {
+@@ -17,6 +19,7 @@
+   IngestionConfig,
+   LlmConfig,
+   StorageConfig,
++  WhatsAppConfig,
+ } from './config.js';
+ 
+ export {
+@@ -28,6 +31,7 @@
+   OriginNotAllowedError,
+   RateLimitedError,
+   UpstreamError,
++  WebhookSignatureError,
+   describeError,
+   isAppError,
+   toPublicError,

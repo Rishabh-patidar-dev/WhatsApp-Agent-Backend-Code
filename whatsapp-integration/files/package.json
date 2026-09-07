@@ -1,0 +1,60 @@
+{
+  "name": "rag-platform",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "npm@10.9.4",
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=20",
+    "npm": ">=10"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "eslint .",
+    "typecheck": "turbo run typecheck && npm run typecheck:scripts",
+    "test": "turbo run test",
+    "db:migrate": "npm run migrate:dev -w @rag/db",
+    "db:studio": "npm run studio -w @rag/db",
+    "eval": "tsx evals/run.ts",
+    "lint:packages": "turbo run lint",
+    "db:generate": "npm run generate -w @rag/db",
+    "db:migrate:deploy": "npm run migrate:deploy -w @rag/db",
+    "db:migrate:status": "npm run migrate:status -w @rag/db",
+    "checkpoint:1": "tsx scripts/checkpoint1-embedding.ts",
+    "ingest:report": "tsx scripts/ingest-report.ts",
+    "verify:cardstore": "tsx scripts/verify-cardstore.ts",
+    "checkpoint:5": "tsx scripts/checkpoint5-cards.ts",
+    "checkpoint:6": "tsx scripts/checkpoint6-embed.ts",
+    "cards:show": "tsx scripts/show-cards.ts",
+    "checkpoint:7": "tsx scripts/checkpoint7-retrieval.ts",
+    "checkpoint:8": "tsx scripts/checkpoint8-verify.ts",
+    "checkpoint:9": "tsx scripts/checkpoint9-answer.ts",
+    "eval:baseline": "tsx evals/run.ts --baseline",
+    "typecheck:scripts": "tsc --noEmit -p tsconfig.json",
+    "widget:key": "tsx scripts/seed-widget-key.ts",
+    "dev:api": "npm run dev -w @rag/api",
+    "dev:worker": "npm run dev -w @rag/worker",
+    "checkpoint:worker": "tsx scripts/checkpoint-worker.ts",
+    "checkpoint:10": "tsx scripts/checkpoint10-whatsapp.ts",
+    "test:page": "node scripts/serve-test-page.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.4.0",
+    "@typescript-eslint/eslint-plugin": "^8.68.0",
+    "@typescript-eslint/parser": "^8.68.0",
+    "eslint": "^10.9.1",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.9.6",
+    "tsx": "^4.23.13",
+    "turbo": "^2.10.12",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.11",
+    "yaml": "^2.9.0"
+  }
+}
