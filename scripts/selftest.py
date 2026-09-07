@@ -69,6 +69,9 @@ catalog.group_counts = fake_group_counts
 catalog.total_courses = lambda: len(COURSES)
 catalog.get_course = lambda cid: BY_ID.get(cid)
 catalog.search_by_name = fake_search_by_name
+catalog.eligible_in_group = lambda group, age: [
+    c for c in fake_courses_in_group(group) if catalog.is_age_eligible(c, age)
+]
 
 # --- fixture lead store -----------------------------------------------------
 STORE: dict[str, dict] = {}
@@ -78,7 +81,7 @@ def fake_get_or_create(phone: str) -> tuple[dict, bool]:
     if phone not in STORE:
         STORE[phone] = {"phone": phone, "language": "es", "state": "GREET",
                         "enrollment_draft": {}, "history": [], "name": None,
-                        "menu_state": {}, "human_takeover": False}
+                        "menu_state": {}, "human_takeover": False, "qualification": {}}
         return STORE[phone], True
     return STORE[phone], False
 
@@ -88,6 +91,7 @@ leads.set_state = lambda phone, state: STORE[phone].update(state=state)
 leads.set_language = lambda phone, lang: STORE[phone].update(language=lang)
 leads.set_draft = lambda phone, draft: STORE[phone].update(enrollment_draft=draft)
 leads.set_menu_state = lambda phone, ms: STORE[phone].update(menu_state=ms)
+leads.set_qualification = lambda phone, q: STORE[phone].update(qualification=q)
 leads.set_name = lambda phone, name: STORE[phone].update(name=name)
 leads.save_history = lambda phone, history: STORE[phone].update(history=history[-20:])
 
@@ -108,7 +112,8 @@ from app.core import generation, retrieval  # noqa: E402
 pushed: list[dict] = []
 
 
-def fake_answer(question, history=None, language="es", focus_course_id=None):
+def fake_answer(question, history=None, language="es", focus_course_id=None,
+                qualification=None):
     return generation.Answer(
         text=f"(respuesta del modelo sobre: {question[:60]})",
         course_ids=["HP038"], confident=True, top_score=0.81,
@@ -120,7 +125,12 @@ retrieval.log_unanswered = lambda *a, **k: None
 
 from app.integrations import dashboard  # noqa: E402
 
-dashboard.push_lead = lambda phone, draft, language: pushed.append(dict(draft)) or True
+def fake_push(phone, draft, language, qualification=None):
+    pushed.append({**draft, "_qualification": qualification or {}})
+    return True
+
+
+dashboard.push_lead = fake_push
 
 
 def record_text(to, body):
@@ -176,15 +186,44 @@ def main() -> None:
     packaged = [c for c in COURSES if c["price_mxn"] is None]
     check(len(packaged) == 5, f"5 package/instalment programmes have no single price (got {len(packaged)})")
 
-    print("\n\033[1m2. Greeting and menus\033[0m")
+    print("\n\033[1m2. Stage 1-2: greet, then qualify\033[0m")
     user("Hola")
     check(sent and sent[0][0] == "text", "new contact gets a short greeting first")
-    check(len(sent) > 1 and sent[1][0] == "list", "greeting is followed by the tappable main menu")
+    check(len(sent) >= 3 and sent[-1][0] == "list", "greeting leads straight into the first question")
+    check(STORE[PHONE]["state"] == "QUALIFY_PROFILE", "conversation is in the qualify stage")
+
+    result = user("", "q:profile:health")
+    check(STORE[PHONE]["qualification"].get("profile") == "health", "profile captured from a tap")
+    check(STORE[PHONE]["state"] == "QUALIFY_AGE", "moves on to asking age")
+    check(any(k == "buttons" for k, _ in result), "age is asked with tappable bands")
+    check(any("edad" in b.lower() or "años" in b.lower() for _, b in result), "age question explains why")
+
+    user("no soy un número")
+    check(STORE[PHONE]["state"] == "QUALIFY_AGE", "an unparseable age is re-asked, not accepted")
+
+    print("\n\033[1m3. Stage 3: educate, filtered by age\033[0m")
+    user("24")
+    check(STORE[PHONE]["qualification"].get("age") == 24, "typed age is stored exactly")
+    check(STORE[PHONE]["state"] == "EDUCATE", "qualification hands over to the educate stage")
+    check(any(k == "list" for k, _ in sent), "a tailored course list is shown")
+
+    print("\n\033[1m4. Age gates what gets recommended\033[0m")
+    # Only 13 courses in the whole catalogue admit under-18s: the 12 public and
+    # employee ones, plus HP046 (Psychological First Aid, open from 15).
+    teen = catalog.eligible_in_group("health", 16)
+    adult = catalog.eligible_in_group("health", 24)
+    check([c["course_id"] for c in teen] == ["HP046"],
+          f"a 16-year-old sees only the 15+ health course (got {[c['course_id'] for c in teen]})")
+    check(len(adult) == 33, f"an adult sees the whole health catalogue (got {len(adult)})")
+    check(len(catalog.eligible_in_group("public", 16)) == 8, "public courses stay open at 16")
+    check(len(catalog.eligible_in_group("rescue", 16)) == 0, "18+ rescue courses are not offered at 16")
+    all_teen = sum(len(catalog.eligible_in_group(g, 16)) for g in catalog.MENU_GROUPS)
+    check(all_teen == 13, f"13 courses in total admit under-18s (got {all_teen})")
 
     user("", "menu:browse")
     check(any("categor" in b.lower() or "categ" in b.lower() for _, b in sent), "browse menu lists categories")
 
-    print("\n\033[1m3. Paging through a long category\033[0m")
+    print("\n\033[1m5. Paging through a long category\033[0m")
     health = fake_courses_in_group("health")
     page1 = menus.course_list("health", "es", 0)
     ids = [r["id"] for r in page1["sections"][0]["rows"]]
@@ -195,40 +234,45 @@ def main() -> None:
     user("", "grp:health")
     user("", "grp:health:9")
 
-    print("\n\033[1m4. Course detail\033[0m")
+    print("\n\033[1m6. Stage 4: propose\033[0m")
     result = user("", "crs:HP038")
     check(any("1,900" in b for _, b in result), "BLS card shows its real price ($1,900 MXN)")
-    check(any(k == "buttons" for k, _ in result), "card offers sign-up buttons")
+    check(any(k == "buttons" for k, _ in result), "the proposal asks for a yes")
+    check(STORE[PHONE]["state"] == "PROPOSE", "conversation is in the propose stage")
+    check(STORE[PHONE]["menu_state"].get("course_id") == "HP038", "the proposed course is remembered")
 
-    print("\n\033[1m5. Sign-up, interrupted by a question\033[0m")
+    print("\n\033[1m7. Stage 5: confirm, interrupted by a question\033[0m")
     user("", "act:enroll:HP038")
-    check(STORE[PHONE]["state"] == "ENROLL_NAME", "starting from a course skips the 'which course' step")
+    check(STORE[PHONE]["state"] == "CONFIRM_NAME", "starting from a course skips the 'which course' step")
     check(STORE[PHONE]["enrollment_draft"].get("course_id") == "HP038", "course is pre-filled on the draft")
 
     user("Rohit Singh")
-    check(STORE[PHONE]["state"] == "ENROLL_EMAIL", "name captured")
+    check(STORE[PHONE]["state"] == "CONFIRM_EMAIL", "name captured")
 
     before = dict(STORE[PHONE]["enrollment_draft"])
     result = user("¿el curso incluye manual?")
-    check(STORE[PHONE]["state"] == "ENROLL_EMAIL", "a question mid-flow does not advance the flow")
+    check(STORE[PHONE]["state"] == "CONFIRM_EMAIL", "a question mid-flow does not advance the flow")
     check(STORE[PHONE]["enrollment_draft"] == before, "nothing collected so far is lost")
     check(len(result) == 2, "the question is answered and the field is asked again")
 
     user("no-es-un-correo")
-    check(STORE[PHONE]["state"] == "ENROLL_EMAIL", "invalid email is rejected")
+    check(STORE[PHONE]["state"] == "CONFIRM_EMAIL", "invalid email is rejected")
     user("rohit@sample.com")
-    check(STORE[PHONE]["state"] == "ENROLL_PHONE", "valid email accepted")
+    check(STORE[PHONE]["state"] == "CONFIRM_PHONE", "valid email accepted")
     user("123")
-    check(STORE[PHONE]["state"] == "ENROLL_PHONE", "short phone number is rejected")
+    check(STORE[PHONE]["state"] == "CONFIRM_PHONE", "short phone number is rejected")
     user("5512345678")
-    check(STORE[PHONE]["state"] == "ENROLL_ADDRESS", "valid phone accepted")
+    check(STORE[PHONE]["state"] == "CONFIRM_ADDRESS", "valid phone accepted")
     user("Mandsaur MP")
-    check(STORE[PHONE]["state"] == "CHATTING", "flow completes and returns to normal chat")
+    check(STORE[PHONE]["state"] == "EDUCATE", "flow completes and returns to the educate stage")
     check(len(pushed) == 1, "lead pushed to the dashboard exactly once")
     check(pushed[0].get("email") == "rohit@sample.com" and pushed[0].get("course_id") == "HP038",
           "lead carries the course and contact details")
+    check(pushed[0]["_qualification"].get("age") == 24
+          and pushed[0]["_qualification"].get("profile") == "health",
+          "lead carries the qualification the team needs")
 
-    print("\n\033[1m6. Language switch and free text\033[0m")
+    print("\n\033[1m8. Language switch and free text\033[0m")
     user("", "act:language")
     check(STORE[PHONE]["language"] == "en", "language toggled to English")
     user("what courses do you have for companies?")

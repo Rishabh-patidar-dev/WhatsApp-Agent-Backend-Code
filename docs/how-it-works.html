@@ -250,14 +250,15 @@ footer p{margin:0 0 6px}
     <div class="eyebrow">Innovun × Cruz Roja Mexicana · Technical documentation</div>
     <h1>How the WhatsApp training agent works</h1>
     <p class="lede">
-      One WhatsApp number that answers questions about 67 real Cruz Roja courses, lets people
-      browse a tappable menu, and captures enrolment leads into the dashboard — without ever
-      inventing a price.
+      One WhatsApp number that qualifies each person, recommends only the courses they are
+      eligible for out of 67 real Cruz Roja courses, and captures the lead into the dashboard —
+      without ever inventing a price.
     </p>
     <div class="chips">
       <span class="chip"><b>67</b> courses</span>
       <span class="chip"><b>71</b> retrievable cards</span>
       <span class="chip"><b>8</b> menu categories</span>
+      <span class="chip"><b>5</b>-stage funnel</span>
       <span class="chip">Spanish + English</span>
       <span class="chip">LangChain · pgvector</span>
       <span class="chip">FastAPI · Meta Cloud API</span>
@@ -271,8 +272,8 @@ footer p{margin:0 0 6px}
 <section>
   <div class="wrap">
     <div class="sec-head"><span class="sec-num">1</span><h2>What the customer sees</h2></div>
-    <p class="sec-sub">Two ways in, one conversation. People who like menus tap; people who prefer
-      typing just type. Both land in the same place.</p>
+    <p class="sec-sub">A five-stage funnel — greet, qualify, educate, propose, confirm — that works
+      whether the person taps or types. Both land in the same place.</p>
 
     <div class="demo">
       <div class="phone">
@@ -291,16 +292,41 @@ footer p{margin:0 0 6px}
             <div class="list-btn">Ver opciones</div>
             <span class="t">11:01</span>
           </div>
+          <div class="bub in">
+            Gracias. ¿Cuántos años tienes?
+            <div class="menu-rows">
+              <div class="menu-row"><span>Menos de 15</span><span></span></div>
+              <div class="menu-row"><span>15 a 17</span><span></span></div>
+              <div class="menu-row"><span>18 o más</span><span></span></div>
+            </div>
+            <span class="t">11:02</span>
+          </div>
+          <div class="bub out">24<span class="t">11:02</span></div>
+          <div class="bub in">
+            ¡Perfecto Rohit! Con base en lo que me dices, estos son los cursos que te quedan:
+            <div class="menu-rows">
+              <div class="menu-row"><span>Accesos Intraóseos</span><span>6 h · $650</span></div>
+              <div class="menu-row"><span>Atención al Parto…</span><span>6 h · $1,000</span></div>
+              <div class="menu-row"><span>Ecografía…</span><span>12 h · $1,100</span></div>
+            </div>
+            <div class="list-btn">☰ Ver cursos</div>
+            <span class="t">11:02</span>
+          </div>
           <div class="bub out">¿el BLS incluye manual?<span class="t">11:03</span></div>
           <div class="bub in">
             Sí, el curso de <b>Basic Life Support (BLS)</b> incluye manual digital.
-            Dura 6 horas en 1 sesión presencial y cuesta <b>$1,900 MXN</b> por persona.
+            Dura 6 horas y cuesta <b>$1,900 MXN</b> por persona.
             <span class="t">11:03</span>
           </div>
         </div>
       </div>
 
       <div class="demo-notes">
+        <div class="note">
+          <h4>It qualifies before it recommends</h4>
+          <p>Two questions — who the training is for, and how old they are — then every list, card
+            and answer is filtered to what that person can actually take.</p>
+        </div>
         <div class="note">
           <h4>Tapping is instant and free</h4>
           <p>Menu taps are answered straight from the database — no embedding call, no model call.
@@ -427,38 +453,98 @@ footer p{margin:0 0 6px}
 <!-- 4 ------------------------------------------------------------------ -->
 <section>
   <div class="wrap">
-    <div class="sec-head"><span class="sec-num">4</span><h2>Sign-up, and what happens when it’s interrupted</h2></div>
-    <p class="sec-sub">The flow collects five fields and pushes the lead to the dashboard. The part
-      that matters commercially is what it does when someone asks a question halfway through.</p>
+    <div class="sec-head"><span class="sec-num">4</span><h2>The five stages</h2></div>
+    <p class="sec-sub">Every conversation runs the same funnel. It qualifies before it recommends,
+      because a recommendation is only worth making once you know who is asking — and because age
+      decides what this person is actually allowed to take.</p>
+
+    <div class="lanes">
+      <div class="lane">
+        <div class="lane-tag"><span class="k">1 · Greet</span><span class="v">1 message</span></div>
+        <div class="steps"><span class="step">one short welcome line, then straight into the questions</span></div>
+      </div>
+      <div class="lane">
+        <div class="lane-tag"><span class="k">2 · Qualify</span><span class="v">2 questions</span></div>
+        <div class="steps">
+          <span class="step hi">who is this for?</span><span class="arw">→</span>
+          <span class="step mono">profile</span>
+          <span class="arw">·</span>
+          <span class="step hi">how old are you?</span><span class="arw">→</span>
+          <span class="step mono">age</span>
+        </div>
+      </div>
+      <div class="lane fast">
+        <div class="lane-tag"><span class="k">3 · Educate</span><span class="v">resting state</span></div>
+        <div class="steps">
+          <span class="step">a course list filtered to what they can take</span><span class="arw">→</span>
+          <span class="step">questions, browsing, retrieval</span>
+        </div>
+      </div>
+      <div class="lane">
+        <div class="lane-tag"><span class="k">4 · Propose</span><span class="v">one course</span></div>
+        <div class="steps">
+          <span class="step">full card + age note if needed</span><span class="arw">→</span>
+          <span class="step ok">Sí, inscribirme</span>
+        </div>
+      </div>
+      <div class="lane slow">
+        <div class="lane-tag"><span class="k">5 · Confirm</span><span class="v">4 fields</span></div>
+        <div class="steps">
+          <span class="step mono">name</span><span class="arw">→</span>
+          <span class="step mono">email</span><span class="arw">→</span>
+          <span class="step mono">phone</span><span class="arw">→</span>
+          <span class="step mono">city</span><span class="arw">→</span>
+          <span class="step ok">pushed to dashboard</span>
+        </div>
+      </div>
+    </div>
 
     <div class="machine">
-      <span class="node start">CHATTING</span><span class="arw">→</span>
-      <span class="node">ENROLL_COURSE</span><span class="arw">→</span>
-      <span class="node">ENROLL_NAME</span><span class="arw">→</span>
-      <span class="node">ENROLL_EMAIL</span><span class="arw">→</span>
-      <span class="node">ENROLL_PHONE</span><span class="arw">→</span>
-      <span class="node">ENROLL_ADDRESS</span><span class="arw">→</span>
-      <span class="node end">pushed to dashboard</span>
+      <span class="node start">GREET</span><span class="arw">→</span>
+      <span class="node">QUALIFY_PROFILE</span><span class="arw">→</span>
+      <span class="node">QUALIFY_AGE</span><span class="arw">→</span>
+      <span class="node">EDUCATE</span><span class="arw">→</span>
+      <span class="node">PROPOSE</span><span class="arw">→</span>
+      <span class="node">CONFIRM_NAME … CONFIRM_ADDRESS</span><span class="arw">→</span>
+      <span class="node end">lead saved</span>
 
       <div class="interrupt">
         <span class="label">Interruption</span>
-        <span class="node">any question mid-flow</span><span class="arw">→</span>
+        <span class="node">a question at any stage</span><span class="arw">→</span>
         <span class="node">answered with the course pinned</span><span class="arw">→</span>
-        <span class="node">same field asked again</span><span class="arw">→</span>
-        <span class="node end">state &amp; draft untouched</span>
+        <span class="node">the same step asked again</span><span class="arw">→</span>
+        <span class="node end">stage &amp; draft untouched</span>
       </div>
     </div>
 
     <div class="col">
-      <p>A lead who asks “¿el curso incluye manual?” while typing their email is not a lead you want
-        to drop, and they are not answering the question you asked. The agent detects that the
-        message is a question, answers it, then repeats the field it was waiting on. Nothing
-        collected so far is lost, and the flow does not restart.</p>
-      <p>Starting from a course card skips the first step entirely — the course is already known, so
-        it goes straight to asking for a name. Email and phone are validated before being stored,
-        and the phone check mirrors the dashboard’s own <span class="mono-inline">toLocalPhone()</span>
-        so a number accepted here can never be rejected there.</p>
-      <p>The state moves to <span class="mono-inline">CHATTING</span> <em>before</em> the dashboard
+      <h3>Why age is asked, and what it changes</h3>
+      <p>Only <strong>13 of the 67 courses</strong> admit under-18s: the twelve public and company
+        courses, plus Primeros Auxilios Psicológicos. Everything else — every clinical, rescue,
+        international and diploma programme — is 18+. Asking once, early, means the agent never
+        recommends something the person cannot take.</p>
+      <ul>
+        <li><strong>Under 15</strong> — told plainly that the minimum is 15, and offered the route
+          through an adult or their school. No course list is pushed at them.</li>
+        <li><strong>15–17</strong> — sees only what is open to them. A 16-year-old who picks “I work
+          in health” gets the one 15+ health course, not the other 32.</li>
+        <li><strong>18+</strong> — the whole catalogue.</li>
+      </ul>
+      <p>Age is also carried into the model’s context, so a typed question gets the same treatment as
+        a menu tap, and onto the dashboard lead, so the training team sees “perfil health, 24 años”
+        next to the enquiry.</p>
+      <p>This is the one place the agent is allowed to narrow what it shows. The client's data guide
+        is explicit that <em>target audience</em> must never be used to tell someone a course is not
+        for them — but eligibility is decided by prerequisites, education and age, in that order, and
+        age is the part the agent can check for itself.</p>
+
+      <h3>Nothing here is a dead end</h3>
+      <p>A question asked instead of an answer is answered, then the step is repeated. This holds in
+        every stage: someone who replies to “how old are you?” with “¿tienen cursos en inglés?” gets
+        a real answer and is then asked their age again. Typed input works everywhere a tap does —
+        an age can be tapped as a band or typed as a number, and a typed number is preferred because
+        the exact age is more useful to the team.</p>
+      <p>The stage moves to <span class="mono-inline">EDUCATE</span> <em>before</em> the dashboard
         push, so a duplicate webhook delivery from Meta cannot submit the same lead twice.</p>
     </div>
   </div>
@@ -592,7 +678,7 @@ footer p{margin:0 0 6px}
 │   ├─ <span class="n">parse_webhook.py</span>   <span class="c">sorts real messages from delivery receipts</span>
 │   └─ <span class="n">format.py</span>          <span class="c">Meta's length limits, in one place</span>
 ├─ <span class="n">core/</span>                  <span class="c">← the brain. No vendor SDK may be imported here</span>
-│   ├─ <span class="n">conversation.py</span>    <span class="c">the router: taps, questions, sign-up flow</span>
+│   ├─ <span class="n">conversation.py</span>    <span class="c">the five stages: greet, qualify, educate, propose, confirm</span>
 │   ├─ <span class="n">menus.py</span>           <span class="c">the menu tree + id parsing</span>
 │   ├─ <span class="n">copy.py</span>            <span class="c">every line the agent can say, both languages</span>
 │   ├─ <span class="n">retrieval.py</span>       <span class="c">LangChain retriever: vector + name search</span>

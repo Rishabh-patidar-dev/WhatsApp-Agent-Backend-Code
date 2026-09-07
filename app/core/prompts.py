@@ -88,6 +88,20 @@ FOCUS_NOTICE = {
     "en": "NOTICE: the person is viewing or signing up for *{course}* (id {course_id}). Unless their question names another course, answer about THAT course using its card above, without asking again which one they mean.",
 }
 
+PROFILE_NOTICE = {
+    "es": "PERFIL: la persona ya te dijo que busca capacitacion para: {profile}. Tiene {age} anos. Recomienda solo cursos cuya edad minima sea igual o menor a su edad, y menciona la edad minima si pregunta por uno que no cumple. No vuelvas a preguntarle estos datos.",
+    "en": "PROFILE: the person has already told you the training is for: {profile}. They are {age}. Only recommend courses whose minimum age is at or below their age, and state the minimum age if they ask about one they do not meet. Do not ask them for these details again.",
+}
+
+PROFILE_LABELS = {
+    "public": {"es": "para si mismo o su familia", "en": "for themselves or their family"},
+    "employees": {"es": "para su empresa (brigadas)", "en": "for their company (brigades)"},
+    "health": {"es": "como profesional o estudiante del area de la salud", "en": "as a health professional or student"},
+    "rescue": {"es": "para rescate profesional", "en": "for professional rescue"},
+    "diploma": {"es": "un diplomado largo", "en": "a long diploma programme"},
+    "browsing": {"es": "aun explorando opciones", "en": "still exploring options"},
+}
+
 NO_CONTEXT = {
     "es": "AVISO: el catálogo no contiene información suficiente para esta pregunta. Dilo con claridad, no inventes, y ofrece que el equipo de Cruz Roja la responda.",
     "en": "NOTICE: the catalogue does not contain enough information for this question. Say so plainly, do not invent anything, and offer to have the Cruz Roja team answer it.",

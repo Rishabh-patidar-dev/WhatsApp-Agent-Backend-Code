@@ -58,11 +58,24 @@ def _notices(docs: list[Document], language: str) -> list[str]:
     return notices
 
 
+def _qualification_notice(qualification: dict | None, language: str) -> str | None:
+    """Tells the model who it is talking to, so it stops re-asking and respects age."""
+    if not qualification or qualification.get("age") is None:
+        return None
+    profile = qualification.get("profile") or "browsing"
+    label = prompts.PROFILE_LABELS.get(profile, prompts.PROFILE_LABELS["browsing"])[language]
+    return prompts.PROFILE_NOTICE[language].format(profile=label, age=qualification["age"])
+
+
 def _context(
-    docs: list[Document], language: str, confident: bool, focus: dict | None = None
+    docs: list[Document], language: str, confident: bool, focus: dict | None = None,
+    qualification: dict | None = None,
 ) -> str:
     blocks = [f"[{d.metadata.get('title', 'Cruz Roja')}]\n{d.page_content}" for d in docs]
     notices = _notices(docs, language)
+    profile_notice = _qualification_notice(qualification, language)
+    if profile_notice:
+        notices.append(profile_notice)
     if focus:
         notices.append(prompts.FOCUS_NOTICE[language].format(
             course=focus["name_es"] if language == "es" else focus["name_en"],
@@ -146,6 +159,7 @@ def answer(
     history: list[dict] | None = None,
     language: str = "es",
     focus_course_id: str | None = None,
+    qualification: dict | None = None,
 ) -> Answer:
     """`focus_course_id` pins the conversation to one course.
 
@@ -168,7 +182,7 @@ def answer(
     confident = top_score >= retrieval.CONFIDENCE_FLOOR
 
     text = _build_chain(language).invoke({
-        "context": _context(docs, language, confident, focused),
+        "context": _context(docs, language, confident, focused, qualification),
         "history": _history_text(history or [], language),
         "question": question,
     }).strip()

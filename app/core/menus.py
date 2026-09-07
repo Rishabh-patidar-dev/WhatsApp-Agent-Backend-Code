@@ -18,7 +18,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from app.channels.whatsapp import format as fmt
-from app.core.copy import GROUP_DESCRIPTIONS, GROUP_LABELS, t
+from app.core.copy import GROUP_DESCRIPTIONS, GROUP_LABELS, PROFILES, t
 from app.db import catalog
 
 COURSES_PER_PAGE = 9  # 10th row is reserved for "see more" / "main menu"
@@ -38,6 +38,10 @@ def parse_action(reply_id: str | None) -> Action:
     parts = reply_id.split(":")
     head = parts[0]
 
+    if head == "q":
+        # q:profile:health, q:age:18plus
+        return Action("qualify", parts[1] if len(parts) > 1 else "",
+                      course_id=parts[2] if len(parts) > 2 else "")
     if head == "menu":
         return Action("menu", parts[1] if len(parts) > 1 else "main")
     if head == "grp":
@@ -116,6 +120,68 @@ def browse_menu(language: str) -> dict:
     }
 
 
+def profile_menu(language: str) -> dict:
+    """Qualifying question one: who is this for? Each answer narrows the catalogue."""
+    return {
+        "header": t("qualify_profile_header", language),
+        "body": t("qualify_profile_body", language),
+        "footer": t("menu_footer", language),
+        "button_label": t("qualify_profile_button", language),
+        "sections": [{
+            "title": t("qualify_profile_header", language),
+            "rows": [
+                {"id": f"q:profile:{key}", "title": profile["label"][language],
+                 "description": profile["desc"][language]}
+                for key, profile in PROFILES.items()
+            ],
+        }],
+    }
+
+
+def age_buttons(language: str) -> list[tuple[str, str]]:
+    """Qualifying question two. A typed number is accepted too, and preferred —
+    the exact age is more useful to the team than a band."""
+    return [
+        ("q:age:under15", t("btn_age_under15", language)),
+        ("q:age:15_17", t("btn_age_15_17", language)),
+        ("q:age:18plus", t("btn_age_18plus", language)),
+    ]
+
+
+def recommended_list(courses: list[dict], language: str, offset: int = 0,
+                     group: str | None = None) -> dict | None:
+    """The courses that fit what qualification learned, as a tappable list."""
+    if not courses:
+        return None
+    page = courses[offset : offset + COURSES_PER_PAGE]
+    rows = [
+        {
+            "id": f"crs:{c['course_id']}",
+            "title": c["short_label"],
+            "description": f"{c['contact_hours']} h · {_price_short(c, language)}",
+        }
+        for c in page
+    ]
+    remaining = len(courses) - (offset + len(page))
+    if remaining > 0 and group:
+        rows.append({
+            "id": f"grp:{group}:{offset + COURSES_PER_PAGE}",
+            "title": t("more_row", language),
+            "description": t("more_row_desc", language, n=min(remaining, COURSES_PER_PAGE)),
+        })
+    else:
+        rows.append({"id": "menu:browse", "title": t("categories_row", language),
+                     "description": t("back_row_desc", language)})
+
+    return {
+        "header": t("browse_header", language),
+        "body": t("educate_hint", language),
+        "footer": t("menu_footer", language),
+        "button_label": t("course_list_button", language),
+        "sections": [{"title": t("section_courses", language), "rows": rows}],
+    }
+
+
 def _price_short(course: dict, language: str) -> str:
     if course.get("price_mxn") is not None:
         return f"${int(course['price_mxn']):,} MXN"
@@ -158,7 +224,7 @@ def course_list(group: str, language: str, offset: int = 0) -> dict | None:
     }
 
 
-def course_detail(course: dict, language: str) -> str:
+def course_detail(course: dict, language: str, age: int | None = None) -> str:
     name = course["name_es"] if language == "es" else course["name_en"]
     description = course.get("short_description") or ""
     return t(
@@ -179,9 +245,24 @@ def course_detail(course: dict, language: str) -> str:
     )
 
 
+def with_age_warning(card: str, course: dict, language: str, age: int | None) -> str:
+    """Age is a real eligibility gate, so it is stated plainly on the card."""
+    if age is None or catalog.is_age_eligible(course, age):
+        return card
+    return card + t("age_warning", language, min_age=catalog.minimum_age(course))
+
+
 def course_buttons(course_id: str, language: str) -> list[tuple[str, str]]:
     return [
         (f"act:enroll:{course_id}", t("btn_enroll", language)),
         ("menu:browse", t("btn_other_courses", language)),
+        ("menu:main", t("btn_menu", language)),
+    ]
+
+
+def propose_buttons(course_id: str, language: str) -> list[tuple[str, str]]:
+    return [
+        (f"act:enroll:{course_id}", t("btn_yes_enroll", language)),
+        ("menu:browse", t("btn_see_others", language)),
         ("menu:main", t("btn_menu", language)),
     ]

@@ -141,6 +141,85 @@ COPY: dict[str, dict[str, str]] = {
         "en": "Which language would you like to continue in?",
     },
 
+    # --- Qualify -------------------------------------------------------------
+    "qualify_intro": {
+        "es": "Para recomendarte el curso correcto, permíteme dos preguntas rápidas.",
+        "en": "So I can recommend the right course, just two quick questions.",
+    },
+    "qualify_profile_header": {
+        "es": "¿Para quién es la capacitación?",
+        "en": "Who is the training for?",
+    },
+    "qualify_profile_body": {
+        "es": "¿Cuál de estas opciones te describe mejor?",
+        "en": "Which of these describes you best?",
+    },
+    "qualify_profile_button": {"es": "Elegir opción", "en": "Choose one"},
+    "qualify_age": {
+        "es": "Gracias. ¿Cuántos años tienes?\n\n"
+              "Te lo pregunto porque algunos cursos piden edad mínima de 15 años y otros de 18.\n"
+              "Escribe tu edad o elige una opción.",
+        "en": "Thanks. How old are you?\n\n"
+              "I ask because some courses require a minimum age of 15 and others 18.\n"
+              "Type your age or pick an option.",
+    },
+    "qualify_age_retry": {
+        "es": "¿Me confirmas tu edad en números? (por ejemplo: 24)",
+        "en": "Could you confirm your age in numbers? (for example: 24)",
+    },
+    "btn_age_under15": {"es": "Menos de 15", "en": "Under 15"},
+    "btn_age_15_17": {"es": "15 a 17", "en": "15 to 17"},
+    "btn_age_18plus": {"es": "18 o más", "en": "18 or older"},
+
+    # --- Educate -------------------------------------------------------------
+    "educate_intro": {
+        "es": "¡Perfecto{name}! Con base en lo que me dices, estos son los cursos que te quedan:",
+        "en": "Perfect{name}! Based on what you've told me, these are the courses that fit:",
+    },
+    "educate_hint": {
+        "es": "Toca un curso para ver el detalle, o pregúntame lo que quieras.",
+        "en": "Tap a course for the details, or ask me anything.",
+    },
+    "educate_under15": {
+        "es": "Gracias por decirme. Nuestros cursos abiertos piden *15 años como mínimo*, "
+              "así que todavía no podría inscribirte.\n\n"
+              "Si un adulto quiere tomar el curso contigo o para tu escuela, con gusto lo vemos: "
+              "escribe *inscribirme* y le paso tus datos al equipo.",
+        "en": "Thanks for telling me. Our open courses require a *minimum age of 15*, "
+              "so I can't sign you up just yet.\n\n"
+              "If an adult wants to take the course with you or for your school, we'd be glad to "
+              "help: type *enroll* and I'll pass your details to the team.",
+    },
+    "educate_none_for_profile": {
+        "es": "Por tu edad, por ahora te corresponden nuestros cursos abiertos al público. "
+              "Te muestro esos:",
+        "en": "For your age, our open public courses are the ones available to you. Here they are:",
+    },
+
+    # --- Propose -------------------------------------------------------------
+    "propose": {
+        "es": "Por lo que me cuentas, *{course}* es el que mejor te queda:",
+        "en": "From what you've told me, *{course}* is the best fit:",
+    },
+    "propose_question": {
+        "es": "¿Te aparto un lugar en este curso?",
+        "en": "Shall I reserve you a place on this course?",
+    },
+    "btn_yes_enroll": {"es": "Sí, inscribirme", "en": "Yes, sign me up"},
+    "btn_see_others": {"es": "Ver otras opciones", "en": "See other options"},
+    "age_warning": {
+        "es": "\n\nNota: este curso pide *{min_age} años* como mínimo. Si aún no los cumples, "
+              "el equipo puede orientarte sobre opciones para tu edad.",
+        "en": "\n\nNote: this course requires a minimum age of *{min_age}*. If you're not there "
+              "yet, the team can point you to options for your age.",
+    },
+
+    # --- Confirm -------------------------------------------------------------
+    "confirm_intro": {
+        "es": "¡Excelente elección! Sólo necesito unos datos para que el equipo te contacte.",
+        "en": "Excellent choice! I just need a few details so the team can contact you.",
+    },
+
     "enroll_course": {
         "es": "¡Perfecto, vamos a inscribirte!\n¿Qué curso te interesa?\n\n_(Escribe *cancelar* para detener, o pregúntame lo que quieras: retomamos donde nos quedamos.)_",
         "en": "Great, let's get you enrolled!\nWhich course are you interested in?\n\n_(Type *cancel* to stop, or ask me anything — we'll pick up where we left off.)_",
@@ -231,6 +310,41 @@ GROUP_DESCRIPTIONS = {
     "diploma":       {"es": "Programas largos con diploma UNAM/Anáhuac", "en": "Long programmes with UNAM/Anáhuac diploma"},
     "certification": {"es": "Estándar de competencia laboral", "en": "Labour competency standard"},
     "instructor":    {"es": "Forma a nuevos instructores",     "en": "Train new instructors"},
+}
+
+
+# The qualifying question's options. Each maps to a slice of the catalogue.
+PROFILES = {
+    "public": {
+        "group": "public",
+        "label": {"es": "Para mí o mi familia", "en": "For me or my family"},
+        "desc": {"es": "Primeros auxilios, RCP, heridas", "en": "First aid, CPR, wound care"},
+    },
+    "employees": {
+        "group": "employees",
+        "label": {"es": "Para mi empresa", "en": "For my company"},
+        "desc": {"es": "Brigadas y protección civil", "en": "Workplace brigades"},
+    },
+    "health": {
+        "group": "health",
+        "label": {"es": "Soy del área de salud", "en": "I work in health"},
+        "desc": {"es": "Actualización clínica y prehospitalaria", "en": "Clinical & prehospital"},
+    },
+    "rescue": {
+        "group": "rescue",
+        "label": {"es": "Rescate profesional", "en": "Professional rescue"},
+        "desc": {"es": "Vertical, acuático, vehicular", "en": "Vertical, water, vehicle"},
+    },
+    "diploma": {
+        "group": "diploma",
+        "label": {"es": "Quiero un diplomado", "en": "I want a diploma"},
+        "desc": {"es": "Programas largos con diploma universitario", "en": "Long university programmes"},
+    },
+    "browsing": {
+        "group": None,
+        "label": {"es": "Sólo tengo una duda", "en": "I just have a question"},
+        "desc": {"es": "Pregúntame lo que necesites", "en": "Ask me anything"},
+    },
 }
 
 

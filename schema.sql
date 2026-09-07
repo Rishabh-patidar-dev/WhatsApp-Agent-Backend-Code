@@ -91,6 +91,10 @@ create table if not exists leads (
     last_seen_at         timestamptz not null default now()
 );
 
+-- What the qualifying questions learned: {"profile": "health", "age": 24}.
+-- Age matters: the catalogue splits at 15 and 18, so it decides eligibility.
+alter table leads add column if not exists qualification jsonb not null default '{}'::jsonb;
+
 -- Which menu the person is looking at, and where they are in a paged list.
 alter table leads add column if not exists menu_state jsonb not null default '{}'::jsonb;
 -- Set when a human on the dashboard takes the conversation over; the bot stays quiet.

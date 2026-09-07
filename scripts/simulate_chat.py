@@ -73,15 +73,14 @@ def reset() -> None:
 
 
 SCRIPTED = [
-    ("Hola", None),
-    ("", "menu:browse"),
-    ("", "grp:international"),
-    ("", "crs:HP038"),
-    ("¿cuánto cuesta el curso de primeros auxilios?", None),
-    ("quiero inscribirme", None),
-    ("BLS", None),
+    ("Hola", None),                                # greet
+    ("", "q:profile:health"),                      # qualify: who for
+    ("24", None),                                  # qualify: age, typed
+    ("¿cuánto cuesta el BLS?", None),              # educate
+    ("", "crs:HP038"),                             # propose
+    ("", "act:enroll:HP038"),                      # confirm
     ("Rohit Singh", None),
-    ("¿el curso incluye manual?", None),          # interruption mid-flow
+    ("¿el curso incluye manual?", None),           # interruption mid-flow
     ("rohit@sample.com", None),
     ("5512345678", None),
     ("Mandsaur MP", None),

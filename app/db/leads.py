@@ -8,17 +8,45 @@ from psycopg.types.json import Jsonb
 
 from app.db import client as db
 
-# Conversation states.
+# The conversation runs as five stages: greet, qualify, educate, propose, confirm.
+# Each stage owns the states below.
 GREET = "GREET"
-CHATTING = "CHATTING"
-ENROLL_COURSE = "ENROLL_COURSE"
-ENROLL_NAME = "ENROLL_NAME"
-ENROLL_EMAIL = "ENROLL_EMAIL"
-ENROLL_PHONE = "ENROLL_PHONE"
-ENROLL_ADDRESS = "ENROLL_ADDRESS"
 
-ENROLL_STATES = (ENROLL_COURSE, ENROLL_NAME, ENROLL_EMAIL, ENROLL_PHONE, ENROLL_ADDRESS)
+# Qualify — who is asking, and how old are they (the catalogue gates at 15/18).
+QUALIFY_PROFILE = "QUALIFY_PROFILE"
+QUALIFY_AGE = "QUALIFY_AGE"
+
+# Educate — browsing and answering questions. The resting state.
+EDUCATE = "EDUCATE"
+
+# Propose — a specific course has been put forward and is awaiting a yes.
+PROPOSE = "PROPOSE"
+
+# Confirm — collecting the details the training team needs to call them back.
+CONFIRM_COURSE = "CONFIRM_COURSE"
+CONFIRM_NAME = "CONFIRM_NAME"
+CONFIRM_EMAIL = "CONFIRM_EMAIL"
+CONFIRM_PHONE = "CONFIRM_PHONE"
+CONFIRM_ADDRESS = "CONFIRM_ADDRESS"
+
+QUALIFY_STATES = (QUALIFY_PROFILE, QUALIFY_AGE)
+CONFIRM_STATES = (CONFIRM_COURSE, CONFIRM_NAME, CONFIRM_EMAIL, CONFIRM_PHONE, CONFIRM_ADDRESS)
+
+# Rows written before the stages were named keep working.
+LEGACY_STATES = {
+    "CHATTING": EDUCATE,
+    "ENROLL_COURSE": CONFIRM_COURSE,
+    "ENROLL_NAME": CONFIRM_NAME,
+    "ENROLL_EMAIL": CONFIRM_EMAIL,
+    "ENROLL_PHONE": CONFIRM_PHONE,
+    "ENROLL_ADDRESS": CONFIRM_ADDRESS,
+}
+
 MAX_HISTORY_MESSAGES = 20
+
+
+def normalise_state(state: str | None) -> str:
+    return LEGACY_STATES.get(state or "", state or GREET)
 
 
 def get_or_create(phone: str) -> tuple[dict[str, Any], bool]:
@@ -51,6 +79,12 @@ def set_language(phone: str, language: str) -> None:
 
 def set_draft(phone: str, draft: dict) -> None:
     db.execute("UPDATE leads SET enrollment_draft = %s WHERE phone = %s", (Jsonb(draft), phone))
+
+
+def set_qualification(phone: str, qualification: dict) -> None:
+    db.execute(
+        "UPDATE leads SET qualification = %s WHERE phone = %s", (Jsonb(qualification), phone)
+    )
 
 
 def set_menu_state(phone: str, menu_state: dict) -> None:

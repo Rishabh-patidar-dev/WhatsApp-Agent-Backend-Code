@@ -90,6 +90,21 @@ def get_courses(course_ids: list[str]) -> dict[str, dict]:
     return {r["course_id"]: r for r in rows}
 
 
+def minimum_age(course: dict) -> int:
+    """The age written on the row, as a number. Values read '15', '18' or '18 años'."""
+    digits = "".join(c for c in (course.get("minimum_age") or "") if c.isdigit())
+    return int(digits[:2]) if digits else 18
+
+
+def is_age_eligible(course: dict, age: int | None) -> bool:
+    """Unknown age is treated as eligible — we never invent a reason to exclude."""
+    return age is None or age >= minimum_age(course)
+
+
+def eligible_in_group(group: str, age: int | None) -> list[dict]:
+    return [c for c in courses_in_group(group) if is_age_eligible(c, age)]
+
+
 def search_by_name(term: str, limit: int = 5) -> list[dict]:
     """Fuzzy name match — handles typos and accents ("primeros auxilos")."""
     term = term.strip()

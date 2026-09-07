@@ -18,7 +18,8 @@ log = logging.getLogger(__name__)
 COMMENT_MAX = 2000
 
 
-def push_lead(phone: str, draft: dict, language: str) -> bool:
+def push_lead(phone: str, draft: dict, language: str,
+              qualification: dict | None = None) -> bool:
     if not settings.dashboard_push_enabled:
         leads.mark_pushed(
             phone,
@@ -30,8 +31,21 @@ def push_lead(phone: str, draft: dict, language: str) -> bool:
     course_id = draft.get("course_id")
     course_line = f"{course} (clave {course_id})" if course_id else course
 
+    qualification = qualification or {}
+    profile = qualification.get("profile")
+    age = qualification.get("age")
+    qualified = ""
+    if profile or age is not None:
+        parts = []
+        if profile:
+            parts.append(f"perfil {profile}")
+        if age is not None:
+            parts.append(f"{age} años")
+        qualified = f"Calificación: {', '.join(parts)}. "
+
     comment = (
         f"Curso de interés: {course_line}. "
+        f"{qualified}"
         f"Dirección: {draft.get('address', 'N/A')}. "
         f"Solicitado por el agente de WhatsApp. Idioma preferido: {language}."
     )[:COMMENT_MAX]
