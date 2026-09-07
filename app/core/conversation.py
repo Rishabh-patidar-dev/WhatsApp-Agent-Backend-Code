@@ -154,12 +154,16 @@ def _handle(message: IncomingMessage) -> str:
     text = (message.text or "").strip()[: settings.max_user_chars]
     lowered = text.lower()
 
-    if message.contact_name and not lead.get("name"):
-        leads.set_name(phone, message.contact_name)
-
     # --- stage 1: greet, then straight into qualifying ---
-    if is_new:
-        _greet_and_qualify(lead, language, message.contact_name)
+    # This is a POC: nothing about the person is remembered between greetings.
+    # A brand-new number, or anyone typing "hi"/"hola" again, gets a full reset
+    # and is asked every detail from scratch — including age, every time.
+    if is_new or lowered in GREETING_WORDS:
+        if not is_new:
+            leads.reset_for_greeting(phone)
+            lead = {**lead, "qualification": {}, "enrollment_draft": {}, "menu_state": {},
+                    "state": leads.QUALIFY_NAME, "name": None}
+        _greet_and_qualify(lead, language)
         return language
 
     if message.is_tap:
@@ -179,13 +183,6 @@ def _handle(message: IncomingMessage) -> str:
             _send_main_menu(phone, language)
         else:
             _ask_next_detail(lead, language, qualification)
-        return language
-
-    if lowered in GREETING_WORDS and state not in leads.CONFIRM_STATES:
-        if not leads.is_qualified(qualification):
-            _greet_and_qualify(lead, language, lead.get("name"), returning=True)
-        else:
-            _send_greeting(phone, language, lead.get("name"), new=False)
         return language
 
     if lowered in EXIT_WORDS and state not in leads.CONFIRM_STATES:
@@ -228,12 +225,11 @@ def _proposed_course_id(lead: dict) -> str | None:
 
 
 # --- stage 1: greet ---------------------------------------------------------
-def _greet_and_qualify(lead: dict, language: str, name: str | None,
-                       returning: bool = False) -> None:
-    """Greeting is one short line, then straight into collecting the details."""
+def _greet_and_qualify(lead: dict, language: str) -> None:
+    """Greeting is one short generic line, then straight into collecting the
+    details — nothing is assumed about who this is, every time."""
     phone = lead["phone"]
-    suffix = f" {name.split()[0]}" if name else ""
-    wa.send_text(phone, t("greeting_back" if returning else "greeting_new", language, name=suffix))
+    wa.send_text(phone, t("greeting_new", language, name=""))
     wa.send_text(phone, t("qualify_intro", language))
     _ask_next_detail(lead, language, leads.as_json(lead.get("qualification")))
 
@@ -274,12 +270,6 @@ def _ask_profile(phone: str, language: str) -> None:
                  header=menu["header"], footer=menu["footer"])
     leads.set_state(phone, leads.QUALIFY_PROFILE)
     leads.set_menu_state(phone, {"screen": "qualify_profile"})
-
-
-def _send_greeting(phone: str, language: str, name: str | None, new: bool) -> None:
-    suffix = f" {name.split()[0]}" if name else ""
-    wa.send_text(phone, t("greeting_new" if new else "greeting_back", language, name=suffix))
-    _send_main_menu(phone, language)
 
 
 # --- stage 2: qualify -------------------------------------------------------
@@ -385,8 +375,8 @@ def _educate(lead: dict, language: str, qualification: dict) -> str:
         group = "public"
         courses = catalog.eligible_in_group(group, age)
 
-    name = lead.get("name")
-    suffix = f" {name.split()[0]}" if name else ""
+    name = (qualification.get("name") or "").split()
+    suffix = f" {name[0]}" if name else ""
     wa.send_text(phone, t("educate_intro", language, name=suffix))
 
     menu = menus.recommended_list(courses, language, offset=0, group=group)

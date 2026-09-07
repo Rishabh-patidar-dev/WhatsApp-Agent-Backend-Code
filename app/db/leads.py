@@ -86,6 +86,18 @@ def next_qualify_state(qualification: dict | None) -> str | None:
     return None
 
 
+def reset_for_greeting(phone: str) -> None:
+    """A "Hi" is treated as a full reset — this is a POC and must never rely on
+    memory of who the person is. Wipes qualification, the enrolment draft and
+    menu position, and puts the lead back at the first question."""
+    db.execute(
+        "UPDATE leads SET qualification = '{}'::jsonb, enrollment_draft = '{}'::jsonb, "
+        "menu_state = '{}'::jsonb, state = %s, name = NULL, last_seen_at = NOW() "
+        "WHERE phone = %s",
+        (QUALIFY_NAME, phone),
+    )
+
+
 def get_or_create(phone: str) -> tuple[dict[str, Any], bool]:
     """Returns (lead, is_new). Atomic, so Meta's duplicate deliveries stay harmless."""
     with db.connection() as conn:
