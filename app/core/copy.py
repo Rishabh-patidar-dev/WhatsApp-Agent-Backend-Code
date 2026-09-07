@@ -149,28 +149,28 @@ COPY: dict[str, dict[str, str]] = {
               "and the team can contact you. Five quick things.",
     },
     "qualify_name": {
-        "es": "1 de 5 · ¿Cuál es tu nombre completo?",
-        "en": "1 of 5 · What's your full name?",
+        "es": "  ¿Cuál es tu nombre completo?",
+        "en": "  What's your full name?",
     },
     "qualify_email": {
-        "es": "3 de 5 · ¿Cuál es tu correo electrónico?",
-        "en": "3 of 5 · What's your email address?",
+        "es": "  ¿Cuál es tu correo electrónico?",
+        "en": "  What's your email address?",
     },
     "qualify_email_retry": {
         "es": "Ese correo no parece válido. ¿Lo escribes de nuevo? (ejemplo: nombre@correo.com)",
         "en": "That email doesn't look valid. Could you type it again? (example: name@email.com)",
     },
     "qualify_phone": {
-        "es": "4 de 5 · ¿A qué número de 10 dígitos te contactamos? (ej. 5512345678)",
-        "en": "4 of 5 · Which 10-digit number should we reach you on? (e.g. 5512345678)",
+        "es": "  ¿A qué número de 10 dígitos te contactamos? (ej. 5512345678)",
+        "en": "  Which 10-digit number should we reach you on? (e.g. 5512345678)",
     },
     "qualify_phone_retry": {
         "es": "Ese número no parece de 10 dígitos. ¿Lo intentas de nuevo? (ej. 5512345678)",
         "en": "That doesn't look like a 10-digit number. Could you try again? (e.g. 5512345678)",
     },
     "qualify_address": {
-        "es": "5 de 5 · ¿En qué ciudad o dirección te encuentras?",
-        "en": "5 of 5 · Which city or address are you in?",
+        "es": "¿En qué ciudad o dirección te encuentras?",
+        "en": " Which city or address are you in?",
     },
     "qualify_done": {
         "es": "¡Listo{name}, quedaron registrados tus datos!\n\n"
@@ -188,10 +188,10 @@ COPY: dict[str, dict[str, str]] = {
     },
     "qualify_profile_button": {"es": "Elegir opción", "en": "Choose one"},
     "qualify_age": {
-        "es": "2 de 5 · ¿Cuántos años tienes?\n\n"
+        "es": " ¿Cuántos años tienes?\n\n"
               "Te lo pregunto porque algunos cursos piden edad mínima de 15 años y otros de 18.\n"
               "Escribe tu edad o elige una opción.",
-        "en": "2 of 5 · How old are you?\n\n"
+        "en": "How old are you?\n\n"
               "I ask because some courses require a minimum age of 15 and others 18.\n"
               "Type your age or pick an option.",
     },
