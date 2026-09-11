@@ -146,7 +146,7 @@ COPY: dict[str, dict[str, str]] = {
         "es": "Antes de empezar, tomo tus datos para poder recomendarte los cursos correctos "
               "y que el equipo pueda contactarte. Son cinco datos rápidos.",
         "en": "Before we start, let me take your details so I can recommend the right courses "
-              "and the team can contact you. Five quick things.",
+              " ",
     },
     "qualify_name": {
         "es": "¿Cuál es tu nombre completo?",
