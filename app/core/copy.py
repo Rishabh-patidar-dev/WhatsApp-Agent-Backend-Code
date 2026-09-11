@@ -275,7 +275,7 @@ COPY: dict[str, dict[str, str]] = {
               "Tap the button to complete your payment on the official Cruz Roja store "
               "and secure your spot.",
     },
-    "btn_pay_now": {"es": "Pagar e inscribirme", "en": "Pay & enroll"},
+    "btn_pay_now": {"es": "Inscribirme", "en": "Enroll"},
     "pay_now_footer": {
         "es": "Pago seguro · tienda.cruzrojacecem.com",
         "en": "Secure payment · tienda.cruzrojacecem.com",
