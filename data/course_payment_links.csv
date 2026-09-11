@@ -15,6 +15,7 @@ HP005,Manejo integral del Paciente Quemado,CECEM,$600,En existencia,https://tien
 HP006,Ecografía Prehospitalaria,CECEM,"$1,000",Agotado,https://tienda.cruzrojacecem.com/products/ecografia-prehospitalaria
 HP007,Electrocardiografía Básica,CECEM,$650,En existencia,https://tienda.cruzrojacecem.com/products/electrocardiografia-basica
 HP008,Electrocardiografía Avanzada (⚠ duplicate name — verify with client),CECEM,$750,Agotado,https://tienda.cruzrojacecem.com/products/electrocardiografia-avanzada
+HP009,Fluidoterapia Básica,CECEM,$650,En existencia,https://tienda.cruzrojacecem.com/products/fluidoterapia-basica
 HP012,Manejo Integral de la Vía Aérea,CECEM,$800,Agotado,https://tienda.cruzrojacecem.com/products/manejo-integral-de-la-via-aerea
 HP013,Manejo de Urgencias Cardiovasculares,LearnWorlds,$450,En existencia,https://tienda.cruzrojacecem.com/products/manejo-de-urgencias-cardiovasculares
 HP014,Urgencias Clínicas,CECEM,$800,Agotado,https://tienda.cruzrojacecem.com/products/manejo-de-urgencias-clinicas
@@ -38,11 +39,13 @@ HP039,Advanced Cardiovascular Life Support (ACLS),AHA,"$2,900",En existencia,htt
 HP040,Pediatric Advanced Life Support (PALS),AHA,"$3,850",Agotado,https://tienda.cruzrojacecem.com/products/pediatric-advanced-life-support-pals
 HP042,Inscripción Diplomado Apoyo Psicosocial en Emergencias y Desastres,Cruz Roja CECEM,"$2,000",En existencia,https://tienda.cruzrojacecem.com/products/inscripcion-diplomado-apoyo-psicosocial-en-emergencias-medicas-y-desastres
 HP043,Inscripción Diplomado Fisioterapia en el Paciente Hospitalizado,Cruz Roja CECEM,"$3,000",En existencia,https://tienda.cruzrojacecem.com/products/inscripcion-diplomado-fisioterapia-en-el-paciente-hospitalizado
-HP044,Inscripción Diplomado Fisioterapia Respiratoria,Cruz Roja CECEM,"$3,000",En existencia,https://tienda.cruzrojacecem.com/products/inscripcion-diplomado-fisioterapia-respiratoria
+HP044,Inscripción Diplomado Fisioterapia Respiratoria,Cruz Roja CECEM,"$3,000",Producto retirado de la tienda - verificar con el cliente,
 HP045,HeartCode BLS y/o ACLS,AHA,"Desde $2,900",En existencia,https://tienda.cruzrojacecem.com/products/aha-rqi
 HP047,Certificación Red Conocer EC 307.01 - Atención Prehospitalaria básica,Cruz Roja CECEM,"$3,200",En existencia,https://tienda.cruzrojacecem.com/products/certificacion-red-conocer
+IR001,Programa de Formación de Instructores,CECEM,"$2,200",En existencia,https://tienda.cruzrojacecem.com/products/programa-de-formacion-de-instructores
 RP001,Especialista en Rescate Vertical,ENDE,"$3,500",Agotado,https://tienda.cruzrojacecem.com/products/especialista-en-rescate-vertical
 RP002,Rescate Vertical Nivel Operaciones,ENDE,"$3,000",Agotado,https://tienda.cruzrojacecem.com/products/rescate-vertical-nivel-operaciones
+RP003,Técnico en Extracción Vehicular (TEV),CECEM,"$3,900",En existencia,https://tienda.cruzrojacecem.com/products/tecnico-en-extraccion-vehicular-tev
 RP004,Guardavidas Profesional en Aguas Abiertas (GPAA),ENDE,"$2,500",Agotado,https://tienda.cruzrojacecem.com/products/guardavidas-profesional-en-aguas-abiertas-gpaa
 RP005,Guardavidas profesional de albercas y parques acuáticos,ENDE,"$2,600",Agotado,https://tienda.cruzrojacecem.com/products/guardavidas-profesional-de-albercas-y-parques-acuaticos
 RP006,Cartografía de Emergencias,ENDE,"$1,500",En existencia,https://tienda.cruzrojacecem.com/products/cartografia-y-orientacion

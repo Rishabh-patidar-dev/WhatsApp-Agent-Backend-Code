@@ -215,11 +215,19 @@ def main() -> None:
 
     print("\n\033[1m1b. Payment links\033[0m")
     linked = [c for c in COURSES if c.get("payment_url")]
-    check(len(linked) == 47, f"47 courses are sold online (got {len(linked)})")
+    check(len(linked) == 49, f"49 courses are sold online (got {len(linked)})")
     check(all(c["payment_url"].startswith("https://tienda.cruzrojacecem.com/products/")
               for c in linked), "every link points at a store product page")
-    check(len({c["payment_url"] for c in linked}) == 46,
-          "links are unique per product (one page sells two catalogue courses)")
+    # One store product legitimately covers two catalogue courses: HP002 and
+    # HP016 both sell as "Atención al parto y emergencias obstétricas".
+    shared = len(linked) - len({c["payment_url"] for c in linked})
+    check(shared == 1, f"exactly one store page is shared by two courses (got {shared})")
+    # HP044's enrolment product was delisted from the store; it must stay
+    # unlinked rather than point at the monthly-instalment product.
+    check(not BY_ID["HP044"].get("payment_url"),
+          "the delisted Fisioterapia Respiratoria enrolment has no link")
+    for cid in ("HP009", "RP003", "IR001"):
+        check(bool(BY_ID[cid].get("payment_url")), f"{cid} is mapped to its store page")
     check(BY_ID["HP038"]["payment_url"].endswith("/basic-life-support-bls"),
           "BLS resolves to its own product page, not another course's")
     check(BY_ID["GPE001"].get("payment_url") is None,
