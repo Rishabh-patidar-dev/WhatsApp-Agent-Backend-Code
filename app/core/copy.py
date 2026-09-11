@@ -262,6 +262,37 @@ COPY: dict[str, dict[str, str]] = {
               "location and payment.\n\n"
               "Anything else I can show you?",
     },
+    # --- Payment ------------------------------------------------------------
+    # Sent between the yes and the confirmation, for the courses the store sells
+    # online. Deliberately short: the button underneath is the point.
+    "pay_now": {
+        "es": "¡Listo{name}! Aparté tu lugar en *{course}*.\n\n"
+              "{price}\n\n"
+              "Toca el botón para completar tu pago en la tienda oficial de Cruz Roja "
+              "y quedar inscrito.",
+        "en": "Done{name}! I've held your place on *{course}*.\n\n"
+              "{price}\n\n"
+              "Tap the button to complete your payment on the official Cruz Roja store "
+              "and secure your spot.",
+    },
+    "btn_pay_now": {"es": "Pagar e inscribirme", "en": "Pay & enroll"},
+    "pay_now_footer": {
+        "es": "Pago seguro · tienda.cruzrojacecem.com",
+        "en": "Secure payment · tienda.cruzrojacecem.com",
+    },
+    "confirm_done_paid": {
+        "es": "Cuando termines el pago, vuelve aquí y te confirmo todo.\n\n"
+              "Ya guardamos tus datos: el equipo de capacitación te contactará en "
+              "{email} / {phone} para confirmarte fechas y sede.\n\n"
+              "Si prefieres pagar después o en efectivo, dímelo y el equipo lo resuelve contigo.\n\n"
+              "¿Te muestro algo más?",
+        "en": "When you've finished paying, come back here and I'll confirm everything.\n\n"
+              "Your details are already saved: the training team will contact you at "
+              "{email} / {phone} to confirm dates and location.\n\n"
+              "If you'd rather pay later or in cash, tell me and the team will sort it out with you.\n\n"
+              "Anything else I can show you?",
+    },
+
     "confirm_intro": {
         "es": "¡Excelente elección! Sólo necesito unos datos para que el equipo te contacte.",
         "en": "Excellent choice! I just need a few details so the team can contact you.",

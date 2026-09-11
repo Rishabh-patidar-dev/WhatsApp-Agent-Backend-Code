@@ -488,13 +488,12 @@ footer p{margin:0 0 6px}
         </div>
       </div>
       <div class="lane slow">
-        <div class="lane-tag"><span class="k">5 · Confirm</span><span class="v">4 fields</span></div>
+        <div class="lane-tag"><span class="k">5 · Confirm</span><span class="v">one tap</span></div>
         <div class="steps">
-          <span class="step mono">name</span><span class="arw">→</span>
-          <span class="step mono">email</span><span class="arw">→</span>
-          <span class="step mono">phone</span><span class="arw">→</span>
-          <span class="step mono">city</span><span class="arw">→</span>
-          <span class="step ok">pushed to dashboard</span>
+          <span class="step ok">pushed to dashboard</span><span class="arw">→</span>
+          <span class="step hi">Pagar e inscribirme</span><span class="arw">→</span>
+          <span class="step mono">the course's own store page</span><span class="arw">→</span>
+          <span class="step ok">confirmation, waiting on their return</span>
         </div>
       </div>
     </div>
@@ -506,7 +505,8 @@ footer p{margin:0 0 6px}
       <span class="node">EDUCATE</span><span class="arw">→</span>
       <span class="node">PROPOSE</span><span class="arw">→</span>
       <span class="node">CONFIRM_NAME … CONFIRM_ADDRESS</span><span class="arw">→</span>
-      <span class="node end">lead saved</span>
+      <span class="node">lead saved</span><span class="arw">→</span>
+      <span class="node end">payment link + confirmation</span>
 
       <div class="interrupt">
         <span class="label">Interruption</span>
@@ -624,6 +624,7 @@ footer p{margin:0 0 6px}
         <div class="steps">
           <span class="step mono">juptr_rc_courses.csv</span><span class="arw">→</span>
           <span class="step">normalise</span><span class="arw">→</span>
+          <span class="step">join <span class="mono-inline">course_payment_links.csv</span></span><span class="arw">→</span>
           <span class="step">build 71 cards</span><span class="arw">→</span>
           <span class="step">embed (768-dim)</span><span class="arw">→</span>
           <span class="step ok">courses + course_chunks</span>
@@ -673,7 +674,7 @@ footer p{margin:0 0 6px}
 ├─ <span class="n">main.py</span>                <span class="c">FastAPI webhook — verifies, queues, returns 200</span>
 ├─ <span class="n">config.py</span>              <span class="c">the ONLY file that reads environment variables</span>
 ├─ <span class="n">channels/whatsapp/</span>
-│   ├─ <span class="n">client.py</span>          <span class="c">send text / buttons / list menus</span>
+│   ├─ <span class="n">client.py</span>          <span class="c">send text / buttons / list menus / link button</span>
 │   ├─ <span class="n">verify.py</span>          <span class="c">HMAC signature check</span>
 │   ├─ <span class="n">parse_webhook.py</span>   <span class="c">sorts real messages from delivery receipts</span>
 │   └─ <span class="n">format.py</span>          <span class="c">Meta's length limits, in one place</span>

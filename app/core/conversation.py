@@ -8,7 +8,9 @@ catalogue gates eligibility at 15 and 18, so it decides what can be recommended
 at all. Only once the details are on file does the agent ask what the person
 came for. Educate is the resting state: browsing, questions, retrieval. Propose
 puts one specific course forward. Confirm needs nothing but the course, because
-everything else was already taken, so enrolling is a single tap.
+everything else was already taken, so enrolling is a single tap — and where the
+course is sold online, that tap is answered with a button opening its own store
+page, with the confirmation waiting underneath for when they come back.
 
 Two ways in, one brain: a tap arrives as a menu id and is answered from the
 database, typed text goes through retrieval and the model. Both move the same
@@ -549,14 +551,56 @@ def _complete_enrollment(lead: dict, language: str, course: dict, qualification:
     dashboard.push_lead(phone, draft, language, qualification=qualification)
 
     first_name = (qualification.get("name") or "").split()
+    _send_confirmation(lead, language, course, course_name,
+                       first_name[0] if first_name else "", qualification)
+    _send_main_menu(phone, language)
+
+
+def _send_confirmation(lead: dict, language: str, course: dict, course_name: str,
+                       first_name: str, qualification: dict) -> None:
+    """The yes is answered, and — when the course is sold online — paid for.
+
+    A business cannot open a browser on someone's phone, so "navigate them to
+    the payment page" means the nearest thing WhatsApp allows: a single
+    call-to-action button that opens the course's own store page in one tap, no
+    link to copy and no page to hunt for. It is sent first, so the tap is the
+    very next thing on screen; the confirmation follows immediately and is what
+    they come back to once payment is done.
+
+    The lead is already on the dashboard by this point either way. Paying is how
+    Cruz Roja prefers a place to be secured, not a condition of being registered
+    — twenty courses (company brigades, diplomas, anything quoted per group) are
+    not sold online at all, and those keep the callback wording unchanged.
+    """
+    phone = lead["phone"]
+    payment_url = (course.get("payment_url") or "").strip()
+
+    if not payment_url:
+        wa.send_text(phone, t(
+            "confirm_done", language,
+            name=first_name,
+            course=course_name,
+            email=qualification.get("email", ""),
+            phone=qualification.get("phone", ""),
+        ))
+        return
+
+    wa.send_cta_url(
+        phone,
+        t("pay_now", language,
+          name=f" {first_name}" if first_name else "",
+          course=course_name,
+          price=course.get("price_display") or ""),
+        t("btn_pay_now", language),
+        payment_url,
+        footer=t("pay_now_footer", language),
+    )
     wa.send_text(phone, t(
-        "confirm_done", language,
-        name=first_name[0] if first_name else "",
-        course=course_name,
+        "confirm_done_paid", language,
         email=qualification.get("email", ""),
         phone=qualification.get("phone", ""),
     ))
-    _send_main_menu(phone, language)
+    log.info("Sent payment link for %s to %s", course["course_id"], _mask(phone))
 
 
 def _handle_confirm(lead: dict, text: str, lowered: str, language: str, state: str) -> str:

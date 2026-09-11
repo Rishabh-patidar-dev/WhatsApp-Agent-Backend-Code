@@ -35,6 +35,11 @@ def _record_buttons(to: str, body: str, buttons) -> bool:
     return True
 
 
+def _record_cta_url(to, body, button_label, url, footer=None) -> bool:
+    transcript.append(f"[link] {body}\n  [{button_label} ↗] {url}")
+    return True
+
+
 def _record_list(to, body, button_label, sections, header=None, footer=None) -> bool:
     lines = [f"[list] {header or ''}", body, f"  ({button_label} ▾)"]
     for section in sections:
@@ -49,6 +54,7 @@ def _record_list(to, body, button_label, sections, header=None, footer=None) -> 
 wa.send_text = _record_text
 wa.send_buttons = _record_buttons
 wa.send_list = _record_list
+wa.send_cta_url = _record_cta_url
 
 from app.core import conversation  # noqa: E402  (imported after the swap)
 from app.db import client as db  # noqa: E402
