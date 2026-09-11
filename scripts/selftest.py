@@ -23,6 +23,7 @@ from app.channels.whatsapp import client as wa  # noqa: E402
 from app.channels.whatsapp import format as fmt  # noqa: E402
 from app.channels.whatsapp.parse_webhook import IncomingMessage  # noqa: E402
 from app.core.ingestion.normalise import normalise_course  # noqa: E402
+from app.core.ingestion.payment_links import load as load_payment_links  # noqa: E402
 
 PHONE = "5215500000000"
 failures: list[str] = []
@@ -40,6 +41,11 @@ def check(condition: bool, description: str) -> None:
 # --- fixture catalogue ------------------------------------------------------
 with (ROOT / "data" / "juptr_rc_courses.csv").open(encoding="utf-8-sig", newline="") as fh:
     COURSES = [normalise_course(row) for row in csv.DictReader(fh)]
+# The store links are joined on here exactly as the ingest does it, so the
+# enrolment checked below is the one that runs in production.
+PAYMENT_LINKS = load_payment_links()
+for _course in COURSES:
+    _course["payment_url"] = PAYMENT_LINKS.get(_course["course_id"])
 BY_ID = {c["course_id"]: c for c in COURSES}
 
 
@@ -148,6 +154,15 @@ def record_buttons(to, body, buttons):
     return True
 
 
+def record_cta_url(to, body, button_label, url, footer=None):
+    sent.append(("link", f"{body}\n  [{button_label}] -> {url}"))
+    check(len(button_label) <= fmt.BUTTON_LABEL_MAX, f"link button ≤20: {button_label!r}")
+    check(len(body) <= fmt.INTERACTIVE_BODY_MAX, "link body ≤1024")
+    check(len(footer or "") <= fmt.FOOTER_MAX, f"link footer ≤60: {footer!r}")
+    check(url.startswith("https://"), f"payment link is https: {url}")
+    return True
+
+
 def record_list(to, body, button_label, sections, header=None, footer=None):
     sent.append(("list", body))
     rows = [r for s in sections for r in s["rows"]]
@@ -164,6 +179,7 @@ def record_list(to, body, button_label, sections, header=None, footer=None):
 wa.send_text = record_text
 wa.send_buttons = record_buttons
 wa.send_list = record_list
+wa.send_cta_url = record_cta_url
 
 from app.core import conversation, menus  # noqa: E402
 
@@ -196,6 +212,18 @@ def main() -> None:
     check(len(packaged) == 5, f"5 package/instalment programmes have no single price (got {len(packaged)})")
     check(_limiter_trips,
           f"rate limiter stops one number after {conversation.settings.rate_limit_messages}/min")
+
+    print("\n\033[1m1b. Payment links\033[0m")
+    linked = [c for c in COURSES if c.get("payment_url")]
+    check(len(linked) == 47, f"47 courses are sold online (got {len(linked)})")
+    check(all(c["payment_url"].startswith("https://tienda.cruzrojacecem.com/products/")
+              for c in linked), "every link points at a store product page")
+    check(len({c["payment_url"] for c in linked}) == 46,
+          "links are unique per product (one page sells two catalogue courses)")
+    check(BY_ID["HP038"]["payment_url"].endswith("/basic-life-support-bls"),
+          "BLS resolves to its own product page, not another course's")
+    check(BY_ID["GPE001"].get("payment_url") is None,
+          "a course the store does not sell has no link")
 
     print("\n\033[1m2. Stage 1-2: greet, then take every detail\033[0m")
     user("Hola")
@@ -271,8 +299,13 @@ def main() -> None:
     check(STORE[PHONE]["state"] == "PROPOSE", "conversation is in the propose stage")
     check(STORE[PHONE]["menu_state"].get("course_id") == "HP038", "the proposed course is remembered")
 
-    print("\n\033[1m7. Stage 5: confirm is one tap\033[0m")
-    user("", "act:enroll:HP038")
+    print("\n\033[1m7. Stage 5: confirm is one tap, then pay\033[0m")
+    result = user("", "act:enroll:HP038")
+    kinds = [k for k, _ in result]
+    check(kinds[0] == "link", f"the yes is answered with the payment button first (got {kinds})")
+    check(any(BY_ID["HP038"]["payment_url"] in b for _, b in result),
+          "and the button opens this exact course's page")
+    check(kinds[1] == "text", "the confirmation follows it, waiting for their return")
     check(len(pushed) == 1, "enrolling pushes the lead immediately, asking nothing again")
     check(STORE[PHONE]["state"] == "EDUCATE", "and returns to the course stage")
     check(pushed[0].get("course_id") == "HP038", "lead carries the course")
@@ -284,6 +317,13 @@ def main() -> None:
     check(pushed[0]["_qualification"].get("age") == 24,
           "lead carries the age the team needs")
 
+    print("\n\033[1m7a. A course the store does not sell keeps the callback\033[0m")
+    result = user("", "act:enroll:GPE001")
+    check(not any(k == "link" for k, _ in result), "no payment button when there is no link")
+    check(any("contactará" in b or "will contact" in b for _, b in result),
+          "the team-will-call confirmation is sent instead")
+    check(len(pushed) == 2, "the lead still reaches the dashboard")
+
     print("\n\033[1m7b. Enrolling without a course still asks which one\033[0m")
     user("inscribirme")
     check(STORE[PHONE]["state"] == "CONFIRM_COURSE", "asks which course")
@@ -291,8 +331,9 @@ def main() -> None:
     check(STORE[PHONE]["state"] == "CONFIRM_COURSE", "a question does not advance the step")
     check(len(result) == 2, "the question is answered and the step asked again")
     user("Basic Life Support")
-    check(len(pushed) == 2, "naming a course completes the enrolment")
-    check(pushed[1].get("name") == "Rohit Singh", "details still not re-asked")
+    check(len(pushed) == 3, "naming a course completes the enrolment")
+    check(pushed[2].get("name") == "Rohit Singh", "details still not re-asked")
+    check(sent[0][0] == "link", "a typed course name reaches the payment button too")
 
     print("\n\033[1m8. Language switch and free text\033[0m")
     user("", "act:language")

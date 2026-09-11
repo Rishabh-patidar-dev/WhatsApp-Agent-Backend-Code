@@ -1,9 +1,10 @@
 """Sending messages to WhatsApp through Meta's Cloud API.
 
-Three shapes are used by the agent:
+Four shapes are used by the agent:
   * text     — normal replies
   * buttons  — up to 3 quick actions under a message
   * list     — the tappable menu (what "More Services" opens in a bank's agent)
+  * cta_url  — a single button that opens a link in one tap (the payment page)
 """
 from __future__ import annotations
 
@@ -42,7 +43,7 @@ def _post(payload: dict, action: str) -> bool:
     return True
 
 
-def send_text(to: str, body: str) -> bool:
+def send_text(to: str, body: str, preview_url: bool = False) -> bool:
     ok = True
     for part in fmt.split_message(body):
         ok = _post(
@@ -50,7 +51,7 @@ def send_text(to: str, body: str) -> bool:
                 "messaging_product": "whatsapp",
                 "to": to,
                 "type": "text",
-                "text": {"body": part, "preview_url": False},
+                "text": {"body": part, "preview_url": preview_url},
             },
             "send text",
         ) and ok
@@ -78,6 +79,44 @@ def send_buttons(to: str, body: str, buttons: Iterable[tuple[str, str]]) -> bool
         },
         "send buttons",
     )
+
+
+def send_cta_url(to: str, body: str, button_label: str, url: str,
+                 footer: str | None = None) -> bool:
+    """One tappable button that opens `url` — no link preview, no copy-paste.
+
+    This is the only way WhatsApp lets a business hand someone a link they can
+    act on in a single tap; a business cannot open a browser on someone's phone
+    by itself. Meta accepts https only, and rejects the whole message if the
+    button label runs past 20 characters.
+
+    Falls back to a plain text message carrying the link if the call-to-action
+    message is refused — some numbers and older API versions do not support it,
+    and a person halfway through enrolling must never be left with nothing.
+    """
+    interactive: dict = {
+        "type": "cta_url",
+        "body": {"text": fmt.clip(body, fmt.INTERACTIVE_BODY_MAX)},
+        "action": {
+            "name": "cta_url",
+            "parameters": {
+                "display_text": fmt.clip(button_label, fmt.BUTTON_LABEL_MAX),
+                "url": url,
+            },
+        },
+    }
+    if footer:
+        interactive["footer"] = {"text": fmt.clip(footer, fmt.FOOTER_MAX)}
+
+    if _post(
+        {"messaging_product": "whatsapp", "to": to, "type": "interactive",
+         "interactive": interactive},
+        "send link button",
+    ):
+        return True
+
+    log.warning("Link button refused — sending the link as text instead")
+    return send_text(to, f"{body}\n\n{url}", preview_url=True)
 
 
 def send_list(

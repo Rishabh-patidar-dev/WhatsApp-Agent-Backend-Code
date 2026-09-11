@@ -15,6 +15,7 @@ from psycopg.types.json import Jsonb
 
 from app.core.ingestion.build_cards import course_card, institutional_cards
 from app.core.ingestion.normalise import normalise_course
+from app.core.ingestion.payment_links import load as load_payment_links
 from app.db import client as db
 from app.providers.embeddings import embeddings
 
@@ -32,7 +33,7 @@ COURSE_COLUMNS = (
     "required_education", "contact_hours", "duration_days", "calendar_span",
     "schedule_format", "delivery_mode", "language", "materials", "assessment",
     "passing_score", "max_participants", "min_participants", "credential",
-    "price_mxn", "price_display", "compliance_flags",
+    "price_mxn", "price_display", "compliance_flags", "payment_url",
 )
 
 
@@ -42,7 +43,15 @@ def read_catalogue(path: Path = CATALOGUE_CSV) -> list[dict]:
             f"{path} not found. Generate it with: python scripts/build_catalog_csv.py"
         )
     with path.open(encoding="utf-8-sig", newline="") as fh:
-        return [normalise_course(row) for row in csv.DictReader(fh)]
+        courses = [normalise_course(row) for row in csv.DictReader(fh)]
+
+    # The store link is joined on here rather than in normalise_course, because
+    # it comes from a different file that the client maintains separately.
+    links = load_payment_links()
+    for course in courses:
+        course["payment_url"] = links.get(course["course_id"])
+    log.info("%s of %s courses have a payment link", len(links), len(courses))
+    return courses
 
 
 def _embed_all(docs: list[Document]) -> list[list[float]]:

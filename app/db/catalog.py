@@ -29,7 +29,7 @@ _COURSE_FIELDS = """
     short_description, target_audience, prerequisites, minimum_age, required_education,
     contact_hours, duration_days, calendar_span, schedule_format, delivery_mode,
     language, materials, assessment, passing_score, max_participants, min_participants,
-    credential, price_mxn, price_display, compliance_flags
+    credential, price_mxn, price_display, compliance_flags, payment_url
 """
 
 
