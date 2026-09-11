@@ -50,6 +50,11 @@ create table if not exists courses (
     updated_at           timestamptz not null default now()
 );
 
+-- The store page that sells this course. Null for the courses Cruz Roja does
+-- not sell online (company brigades, diplomas, anything quoted per group) —
+-- those still go to the team for a callback, exactly as before.
+alter table courses add column if not exists payment_url text;
+
 create index if not exists courses_menu_group_idx on courses (menu_group);
 create index if not exists courses_name_trgm_idx on courses using gin (name_es gin_trgm_ops);
 

@@ -1,0 +1,67 @@
+Course_ID,Store_Product_Name,Provider,Store_Price_MXN,Stock_Status,Payment_Link
+GP001,Primeros Auxilios,CECEM,$755,En existencia,https://tienda.cruzrojacecem.com/products/primer-respondiente-en-primeros-auxilios-8-hrs
+GP002,Toma de Signos Vitales,CECEM,$485,En existencia,https://tienda.cruzrojacecem.com/products/toma-de-signos-vitales
+GP003,Reanimación Cardiopulmonar y Desobstrucción de la Vía Aérea,CECEM,$580,En existencia,https://tienda.cruzrojacecem.com/products/reanimacion-cardiopulmonar-y-desobstruccion-de-la-via-aerea
+GP004,"Cuidado de pacientes en el hogar (medicamentos, adaptaciones)",CECEM,$580,En existencia,https://tienda.cruzrojacecem.com/products/cuidados-en-el-hogar-curaciones-vendajes-e-inyecciones
+GP005,Limpieza y tratamiento de heridas,CECEM,$425,En existencia,https://tienda.cruzrojacecem.com/products/tecnicas-de-asepsia-y-antisepsia
+GP006,Formación de Camilleros — Traslado y Movilización del Paciente,CECEM,"$1,500",En existencia,https://tienda.cruzrojacecem.com/products/formacion-de-camilleros-seguridad-en-el-traslado-y-movilizacion-del-paciente
+GP007,Primeros Auxilios Pediátricos,CECEM,$645,En existencia,https://tienda.cruzrojacecem.com/products/primeros-auxilios-pediatricos
+GP008,Primeros Auxilios en el Deporte,CECEM,"$1,100",Agotado,https://tienda.cruzrojacecem.com/products/primeros-auxilios-en-el-deporte
+HP001,Accesos Intraóseos,CECEM,$600,En existencia,https://tienda.cruzrojacecem.com/products/accesos-intraoseos
+HP002,Urgencias Obstétricas,CECEM,$800,En existencia,https://tienda.cruzrojacecem.com/products/atencion-al-parto-y-emergencias-obstetricas
+HP003,Manejo del Paciente Neurocrítico,CECEM,$800,En existencia,https://tienda.cruzrojacecem.com/products/manejo-del-paciente-neurocritico
+HP004,Primeros Auxilios de Mascotas,Cruz Roja CECEM,"$1,350",En existencia,https://tienda.cruzrojacecem.com/products/primeros-auxilios-de-mascotas
+HP005,Manejo integral del Paciente Quemado,CECEM,$600,En existencia,https://tienda.cruzrojacecem.com/products/atencion-integral-del-paciente-quemado
+HP006,Ecografía Prehospitalaria,CECEM,"$1,000",Agotado,https://tienda.cruzrojacecem.com/products/ecografia-prehospitalaria
+HP007,Electrocardiografía Básica,CECEM,$650,En existencia,https://tienda.cruzrojacecem.com/products/electrocardiografia-basica
+HP008,Electrocardiografía Avanzada (⚠ duplicate name — verify with client),CECEM,$750,Agotado,https://tienda.cruzrojacecem.com/products/electrocardiografia-avanzada
+HP012,Manejo Integral de la Vía Aérea,CECEM,$800,Agotado,https://tienda.cruzrojacecem.com/products/manejo-integral-de-la-via-aerea
+HP013,Manejo de Urgencias Cardiovasculares,LearnWorlds,$450,En existencia,https://tienda.cruzrojacecem.com/products/manejo-de-urgencias-cardiovasculares
+HP014,Urgencias Clínicas,CECEM,$800,Agotado,https://tienda.cruzrojacecem.com/products/manejo-de-urgencias-clinicas
+HP015,Urgencias Traumatológicas,ADIEL,$700,En existencia,https://tienda.cruzrojacecem.com/products/urgencias-traumatol-gicas
+HP016,Urgencias Obstétricas,CECEM,$800,En existencia,https://tienda.cruzrojacecem.com/products/atencion-al-parto-y-emergencias-obstetricas
+HP017,Urgencias Pediátricas,Cruz Roja CECEM,$800,En existencia,https://tienda.cruzrojacecem.com/products/urgencias-pediatricas
+HP019,Restricción del Movimiento Espinal,CECEM,$800,En existencia,https://tienda.cruzrojacecem.com/products/restriccion-del-movimiento-espinal
+HP020,Farmacología Clínica,CECEM,$700,En existencia,https://tienda.cruzrojacecem.com/products/introduccion-al-manejo-farmacologico
+HP022,Stop The Bleed,OTRO,$400,Agotado,https://tienda.cruzrojacecem.com/products/stop-the-bleed
+HP023,Accesos Vasculares Ecoguiados,CECEM,$800,Agotado,https://tienda.cruzrojacecem.com/products/accesos-vasculares-ecoguiados
+HP025,Neonatal Resuscitation Program (NRP),Cruz Roja CECEM,"$5,500",En existencia,https://tienda.cruzrojacecem.com/products/reanimacion-neonatal
+HP029,Ventilación Mecánica No Invasiva,CECEM,$850,En existencia,https://tienda.cruzrojacecem.com/products/atencion-prehospitalaria-en-covid-19
+HP030,Transportación del Paciente Crítico,Cruz Roja CECEM,$800,En existencia,https://tienda.cruzrojacecem.com/products/transportacion-del-paciente-critico
+HP032,TRIAGE y Manejo de Múltiples Víctimas,ENDE,"$2,200",Agotado,https://tienda.cruzrojacecem.com/products/triage-y-manejo-de-multiples-victimas
+HP033,Prehospital Trauma Life Support (PHTLS) 10ed,NAEMT,"$2,600",En existencia,https://tienda.cruzrojacecem.com/products/prehospital-trauma-life-support-phtls
+HP034,Advanced Medical Life Support (AMLS),NAEMT,"$2,000",En existencia,https://tienda.cruzrojacecem.com/products/advanced-medical-life-support-amls
+HP035,Emergency Pediatric Care (EPC),NAEMT,"$2,650",Agotado,https://tienda.cruzrojacecem.com/products/emergency-pediatric-care-epc-4ed
+HP037,Geriatric Education for EMS (GEMS),NAEMT,"$2,000",En existencia,https://tienda.cruzrojacecem.com/products/geriatric-education-for-ems-gems
+HP038,Basic Life Support (BLS),AHA,"$1,900",En existencia,https://tienda.cruzrojacecem.com/products/basic-life-support-bls
+HP039,Advanced Cardiovascular Life Support (ACLS),AHA,"$2,900",En existencia,https://tienda.cruzrojacecem.com/products/advanced-cardiovascular-life-support-acls
+HP040,Pediatric Advanced Life Support (PALS),AHA,"$3,850",Agotado,https://tienda.cruzrojacecem.com/products/pediatric-advanced-life-support-pals
+HP042,Inscripción Diplomado Apoyo Psicosocial en Emergencias y Desastres,Cruz Roja CECEM,"$2,000",En existencia,https://tienda.cruzrojacecem.com/products/inscripcion-diplomado-apoyo-psicosocial-en-emergencias-medicas-y-desastres
+HP043,Inscripción Diplomado Fisioterapia en el Paciente Hospitalizado,Cruz Roja CECEM,"$3,000",En existencia,https://tienda.cruzrojacecem.com/products/inscripcion-diplomado-fisioterapia-en-el-paciente-hospitalizado
+HP044,Inscripción Diplomado Fisioterapia Respiratoria,Cruz Roja CECEM,"$3,000",En existencia,https://tienda.cruzrojacecem.com/products/inscripcion-diplomado-fisioterapia-respiratoria
+HP045,HeartCode BLS y/o ACLS,AHA,"Desde $2,900",En existencia,https://tienda.cruzrojacecem.com/products/aha-rqi
+HP047,Certificación Red Conocer EC 307.01 - Atención Prehospitalaria básica,Cruz Roja CECEM,"$3,200",En existencia,https://tienda.cruzrojacecem.com/products/certificacion-red-conocer
+RP001,Especialista en Rescate Vertical,ENDE,"$3,500",Agotado,https://tienda.cruzrojacecem.com/products/especialista-en-rescate-vertical
+RP002,Rescate Vertical Nivel Operaciones,ENDE,"$3,000",Agotado,https://tienda.cruzrojacecem.com/products/rescate-vertical-nivel-operaciones
+RP004,Guardavidas Profesional en Aguas Abiertas (GPAA),ENDE,"$2,500",Agotado,https://tienda.cruzrojacecem.com/products/guardavidas-profesional-en-aguas-abiertas-gpaa
+RP005,Guardavidas profesional de albercas y parques acuáticos,ENDE,"$2,600",Agotado,https://tienda.cruzrojacecem.com/products/guardavidas-profesional-de-albercas-y-parques-acuaticos
+RP006,Cartografía de Emergencias,ENDE,"$1,500",En existencia,https://tienda.cruzrojacecem.com/products/cartografia-y-orientacion
+,Actúa a tiempo: Aprende a salvar una vida,CECEM,$150,En existencia,https://tienda.cruzrojacecem.com/products/actua-a-tiempo-aprende-a-salvar-una-vida
+,Asesoría Tesina,AHA,$300,En existencia,https://tienda.cruzrojacecem.com/products/asesoria-tesina
+,"Campamento Estatal de Juventud ""Pequeños Vaqueros Grandes Héroes""",Cruz Roja CECEM,"$1,370",Agotado,https://tienda.cruzrojacecem.com/products/campamento-estatal-de-juventud-pequenos-vaqueros-grandes-heroes
+,Certificación Red Conocer EC 1371 - Primeros Auxilios,Cruz Roja CECEM,"$3,200",En existencia,https://tienda.cruzrojacecem.com/products/certificacion-red-conocer-ec-1371-primeros-auxilios
+,Constancias CECEM,Cruz Roja CECEM,$100,En existencia,https://tienda.cruzrojacecem.com/products/constancias-cecem
+,"Electrocardiografía Avanzada (online, LearnWorlds) (⚠ duplicate name — verify with client)",LearnWorlds,"$12,000",En existencia,https://tienda.cruzrojacecem.com/products/electrocardiografia-avanzada-1
+,Electrocardiografía Básica Online,LearnWorlds,$500,En existencia,https://tienda.cruzrojacecem.com/products/ekg-basica
+,Fundamentos de Cuidados Críticos en Soporte Inicial (FCCS),Cruz Roja CECEM,"$5,800",En existencia,https://tienda.cruzrojacecem.com/products/fundamentos-de-cuidados-criticos-en-soporte-inicial-fccs
+,Inducción a la Cruz Roja Mexicana,CECEM,Gratis,En existencia,https://tienda.cruzrojacecem.com/products/induccion-a-la-cruz-roja-mexicana
+,Mensualidad Diplomado Apoyo Psicosocial en Emergencias y Desastres,Cruz Roja CECEM,"$2,500",En existencia,https://tienda.cruzrojacecem.com/products/mensualidad-de-apoyo-psicosocial-en-emergencias-medicas-y-desastres
+,Mensualidad Diplomado Fisioterapia en el Paciente Hospitalizado,Cruz Roja CECEM,"Desde $3,000",En existencia,https://tienda.cruzrojacecem.com/products/inscripcion-diplomado-fisioterapia-en-el-paciente-hospitalizado-mensualidad
+,Mensualidad Diplomado de Fisioterapia Respiratoria,Cruz Roja CECEM,"$3,000",En existencia,https://tienda.cruzrojacecem.com/products/mensualidad-diplomado-de-fisioterapia-respiratoria
+,Mensualidad: Rescate en Zonas Agrestes,AHA,Desde $600,En existencia,https://tienda.cruzrojacecem.com/products/rescate-en-zonas-agrestes
+,Pago complementario Cursos,Cruz Roja CECEM,"$1,600",En existencia,https://tienda.cruzrojacecem.com/products/pago-complementario-cursos-aha
+,Programa Estatal de Actualización nivel Básico (PEAB) - Adicionales,Cruz Roja CECEM,Desde $160,En existencia,https://tienda.cruzrojacecem.com/products/programa-estatal-de-actualizacion-basico
+,Recuperación NAEMT,AHA,Desde $200,En existencia,https://tienda.cruzrojacecem.com/products/recuperacion-naemt
+,Reprogramación AHA,AHA,Desde $800,En existencia,https://tienda.cruzrojacecem.com/products/reprogramacion-aha
+,Simulación Clínica en Prehospital,Cruz Roja CECEM,$750,Agotado,https://tienda.cruzrojacecem.com/products/simulacion-clinica-en-prehospital
+,⚠ Test Oxxo Pay Shopify (INTERNAL TEST — NOT A COURSE),Cruz Roja CECEM,$10,En existencia,https://tienda.cruzrojacecem.com/products/test-oxxo-pay-shopify
