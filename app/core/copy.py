@@ -161,12 +161,12 @@ COPY: dict[str, dict[str, str]] = {
         "en": "That email doesn't look valid. Could you type it again? (example: name@email.com)",
     },
     "qualify_phone": {
-        "es": "¿A qué número de 10 dígitos te contactamos? (ej. 5512345678)",
-        "en": "Which 10-digit number should we reach you on? (e.g. 5512345678)",
+        "es": "¿A qué número de 10 dígitos te contactamos?)",
+        "en": "Which 10-digit number should we reach you on? ",
     },
     "qualify_phone_retry": {
-        "es": "Ese número no parece de 10 dígitos. ¿Lo intentas de nuevo? (ej. 5512345678)",
-        "en": "That doesn't look like a 10-digit number. Could you try again? (e.g. 5512345678)",
+        "es": "Ese número no parece de 10 dígitos. ¿Lo intentas de nuevo?",
+        "en": "That doesn't look like a 10-digit number. Could you try again?",
     },
     "qualify_address": {
         "es": "¿En qué ciudad o dirección te encuentras?",
