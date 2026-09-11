@@ -252,15 +252,15 @@ COPY: dict[str, dict[str, str]] = {
         "en": "Happy to! Which course shall I sign you up for?\n\n"
               "_(Type *cancel* to stop, or ask me anything.)_",
     },
+    # Courses the store does not sell online: same confirmation, but the team
+    # arranges payment, so it does not claim a payment has been made.
     "confirm_done": {
-        "es": "¡Listo, {name}! Registramos tu interés en *{course}*.\n\n"
-              "El equipo de capacitación te contactará en {email} / {phone} para confirmarte "
-              "fechas, sede y forma de pago.\n\n"
-              "¿Te muestro algo más?",
-        "en": "Done, {name}! We've registered your interest in *{course}*.\n\n"
-              "The training team will contact you at {email} / {phone} to confirm dates, "
-              "location and payment.\n\n"
-              "Anything else I can show you?",
+        "es": "Gracias por registrarte en *{course}*,\n"
+              "{name}, tu lugar para este curso ha sido reservado.\n"
+              "Cualquier información adicional se compartirá en {email} y {phone}.",
+        "en": "Thanks for registering for *{course}*,\n"
+              "{name}, your seat for this course has been reserved.\n"
+              "Any further information will be shared on {email} and {phone}.",
     },
     # --- Payment ------------------------------------------------------------
     # Sent between the yes and the confirmation, for the courses the store sells
@@ -280,17 +280,16 @@ COPY: dict[str, dict[str, str]] = {
         "es": "Pago seguro · tienda.cruzrojacecem.com",
         "en": "Secure payment · tienda.cruzrojacecem.com",
     },
+    # Sent right after the payment button. WhatsApp gives no callback when a
+    # link button is tapped, so this cannot wait for the tap — it is sent
+    # immediately and is what the person comes back to once payment is done.
     "confirm_done_paid": {
-        "es": "Cuando termines el pago, vuelve aquí y te confirmo todo.\n\n"
-              "Ya guardamos tus datos: el equipo de capacitación te contactará en "
-              "{email} / {phone} para confirmarte fechas y sede.\n\n"
-              "Si prefieres pagar después o en efectivo, dímelo y el equipo lo resuelve contigo.\n\n"
-              "¿Te muestro algo más?",
-        "en": "When you've finished paying, come back here and I'll confirm everything.\n\n"
-              "Your details are already saved: the training team will contact you at "
-              "{email} / {phone} to confirm dates and location.\n\n"
-              "If you'd rather pay later or in cash, tell me and the team will sort it out with you.\n\n"
-              "Anything else I can show you?",
+        "es": "Gracias por registrarte en *{course}*,\n"
+              "{name}, tu lugar para este curso ha sido reservado.\n"
+              "Cualquier información adicional se compartirá en {email} y {phone}.",
+        "en": "Thanks for registering for *{course}*,\n"
+              "{name}, your seat for this course has been reserved.\n"
+              "Any further information will be shared on {email} and {phone}.",
     },
 
     "confirm_intro": {

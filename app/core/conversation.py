@@ -567,10 +567,15 @@ def _send_confirmation(lead: dict, language: str, course: dict, course_name: str
     very next thing on screen; the confirmation follows immediately and is what
     they come back to once payment is done.
 
+    WhatsApp sends no webhook when a link button is tapped, so the confirmation
+    cannot wait for the tap — it goes out immediately behind the button, and the
+    main menu follows it.
+
     The lead is already on the dashboard by this point either way. Paying is how
     Cruz Roja prefers a place to be secured, not a condition of being registered
     — twenty courses (company brigades, diplomas, anything quoted per group) are
-    not sold online at all, and those keep the callback wording unchanged.
+    not sold online at all, and those get the same confirmation without the
+    button, since the team arranges payment with them directly.
     """
     phone = lead["phone"]
     payment_url = (course.get("payment_url") or "").strip()
@@ -597,6 +602,8 @@ def _send_confirmation(lead: dict, language: str, course: dict, course_name: str
     )
     wa.send_text(phone, t(
         "confirm_done_paid", language,
+        name=first_name,
+        course=course_name,
         email=qualification.get("email", ""),
         phone=qualification.get("phone", ""),
     ))

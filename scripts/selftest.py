@@ -306,6 +306,14 @@ def main() -> None:
     check(any(BY_ID["HP038"]["payment_url"] in b for _, b in result),
           "and the button opens this exact course's page")
     check(kinds[1] == "text", "the confirmation follows it, waiting for their return")
+    confirmation = result[1][1]
+    check("Basic Life Support" in confirmation, "confirmation names the course they chose")
+    check("Rohit" in confirmation, "confirmation names them")
+    check("reservado" in confirmation or "reserved" in confirmation,
+          "confirmation says the seat is reserved")
+    check("rohit@sample.com" in confirmation and "5512345678" in confirmation,
+          "confirmation repeats the email and phone we will write to")
+    check(kinds[2] == "list", f"the main menu follows the confirmation (got {kinds})")
     check(len(pushed) == 1, "enrolling pushes the lead immediately, asking nothing again")
     check(STORE[PHONE]["state"] == "EDUCATE", "and returns to the course stage")
     check(pushed[0].get("course_id") == "HP038", "lead carries the course")
@@ -317,11 +325,13 @@ def main() -> None:
     check(pushed[0]["_qualification"].get("age") == 24,
           "lead carries the age the team needs")
 
-    print("\n\033[1m7a. A course the store does not sell keeps the callback\033[0m")
+    print("\n\033[1m7a. A course the store does not sell still confirms\033[0m")
     result = user("", "act:enroll:GPE001")
     check(not any(k == "link" for k, _ in result), "no payment button when there is no link")
-    check(any("contactará" in b or "will contact" in b for _, b in result),
-          "the team-will-call confirmation is sent instead")
+    check(any("reservado" in b or "reserved" in b for _, b in result),
+          "the seat-reserved confirmation is still sent")
+    check(any("rohit@sample.com" in b and "5512345678" in b for _, b in result),
+          "confirmation repeats the email and phone we will write to")
     check(len(pushed) == 2, "the lead still reaches the dashboard")
 
     print("\n\033[1m7b. Enrolling without a course still asks which one\033[0m")
