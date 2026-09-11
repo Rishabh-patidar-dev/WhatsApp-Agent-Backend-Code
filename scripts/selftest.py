@@ -193,10 +193,17 @@ _limiter_trips = any(
 conversation._rate_limited = lambda phone: False
 
 
+_message_no = 0
+
+
 def user(text: str, tap: str | None = None) -> list[tuple[str, str]]:
+    global _message_no
     sent.clear()
     print(f"\n\033[96m>>> {'tap ' + tap if tap else text}\033[0m")
-    conversation.handle(IncomingMessage("sim", PHONE, text, "Rohit Singh", tap))
+    # Meta gives every message its own id; reusing one would look like a
+    # redelivery and be ignored, which is what the dedupe check below proves.
+    _message_no += 1
+    conversation.handle(IncomingMessage(f"sim-{_message_no}", PHONE, text, "Rohit Singh", tap))
     for kind, body in sent:
         preview = body.replace("\n", "\n    ")
         print(f"  <{kind}> {preview[:400]}")
@@ -353,7 +360,35 @@ def main() -> None:
     check(pushed[2].get("name") == "Rohit Singh", "details still not re-asked")
     check(sent[0][0] == "link", "a typed course name reaches the payment button too")
 
-    print("\n\033[1m8. Language switch and free text\033[0m")
+    print("\n\033[1m8. Naming a course brings its card and enrol button\033[0m")
+    user("menu")
+    result = user("tell me about PALS")
+    kinds = [k for k, _ in result]
+    check(kinds == ["text", "text", "buttons"],
+          f"answer, then the course card, then the enrol buttons (got {kinds})")
+    check("Pediatric Advanced Life Support" in result[1][1], "the card is the course they named")
+    check("3,850" in result[1][1], "the card carries its real price")
+    check(STORE[PHONE]["menu_state"].get("course_id") == "HP040",
+          "that course is now the one on screen, so enrolling needs no menu")
+    result = user("", "act:enroll:HP040")
+    check(any(k == "link" for k, _ in result), "and it goes straight to its payment link")
+    check(any(BY_ID["HP040"]["payment_url"] in b for _, b in result), "the right one")
+
+    # Ambiguous or general questions must not hijack the reply with one card.
+    result = user("¿qué cursos de primeros auxilios tienen?")
+    check([k for k, _ in result] == ["text"],
+          "an ambiguous course name is answered normally, no card guessed")
+
+    print("\n\033[1m9. A redelivered message is answered once\033[0m")
+    sent.clear()
+    dupe = IncomingMessage("dupe-1", PHONE, "tell me about BLS", "Rohit Singh", None)
+    conversation.handle(dupe)
+    first = len(sent)
+    conversation.handle(dupe)          # Meta sending the very same message again
+    check(len(sent) == first and first > 0,
+          f"the second delivery produces nothing (was {first}, now {len(sent)})")
+
+    print("\n\033[1m10. Language switch and free text\033[0m")
     user("", "act:language")
     check(STORE[PHONE]["language"] == "en", "language toggled to English")
     user("what courses do you have for companies?")

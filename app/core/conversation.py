@@ -70,6 +70,12 @@ _locks_guard = threading.Lock()
 _recent: dict[str, deque] = defaultdict(deque)
 _recent_guard = threading.Lock()
 
+# Message ids already answered, so a redelivery is not answered twice.
+_SEEN_MAX = 2000
+_seen_ids: set[str] = set()
+_seen_order: deque[str] = deque()
+_seen_guard = threading.Lock()
+
 
 def _lock_for(phone: str) -> threading.Lock:
     with _locks_guard:
@@ -124,8 +130,33 @@ def to_local_phone(value: str) -> str:
 
 
 # --- entry point ------------------------------------------------------------
+def _already_handled(message_id: str) -> bool:
+    """Meta redelivers a message it is unsure we received.
+
+    Without this, one customer message can be answered twice — two model calls,
+    two replies, and a duplicate of whatever the first reply did. The id Meta
+    assigns is stable across redeliveries, so remembering the recent ones is
+    enough. Single-worker deployment (WEB_CONCURRENCY=1) makes an in-process
+    record sufficient, exactly as it does for the per-phone lock.
+    """
+    if not message_id:
+        return False
+    with _seen_guard:
+        if message_id in _seen_ids:
+            return True
+        _seen_ids.add(message_id)
+        _seen_order.append(message_id)
+        while len(_seen_order) > _SEEN_MAX:
+            _seen_ids.discard(_seen_order.popleft())
+        return False
+
+
 def handle(message: IncomingMessage) -> None:
     """Runs in a background task, one message at a time per phone number."""
+    if _already_handled(message.message_id):
+        log.info("Duplicate delivery of %s ignored", message.message_id)
+        return
+
     with _lock_for(message.from_phone):
         language = "es"
         try:
@@ -210,7 +241,19 @@ def _handle(message: IncomingMessage) -> str:
         return language
 
     focus = _focus_course_id(lead)
-    _answer_question(lead, text, language, with_hint=True, focus_course_id=focus)
+
+    # Naming a course in ordinary conversation — "tell me about PALS" — puts
+    # that course on screen the same way tapping it would: the answer, then its
+    # card, then the enrol button. Without this they would have to go back and
+    # hunt through the menu to act on what they just read.
+    named = catalog.resolve_course_in_text(text)
+    show_card = bool(named) and named["course_id"] != focus
+
+    _answer_question(lead, text, language, with_hint=not show_card,
+                     focus_course_id=focus or (named or {}).get("course_id"))
+
+    if show_card:
+        _propose_course(lead, language, named["course_id"])
     return language
 
 

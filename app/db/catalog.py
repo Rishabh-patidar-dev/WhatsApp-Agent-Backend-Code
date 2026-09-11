@@ -9,8 +9,10 @@ memory for a few minutes — that removes a database round-trip from every menu 
 """
 from __future__ import annotations
 
+import re
 import threading
 import time
+import unicodedata
 from typing import Any
 
 from app.db import client as db
@@ -103,6 +105,80 @@ def is_age_eligible(course: dict, age: int | None) -> bool:
 
 def eligible_in_group(group: str, age: int | None) -> list[dict]:
     return [c for c in courses_in_group(group) if is_age_eligible(c, age)]
+
+
+def _all_courses() -> list[dict]:
+    return _cached("all", lambda: db.query(f"SELECT {_COURSE_FIELDS} FROM courses ORDER BY course_id"))
+
+
+def _normalise(text: str) -> str:
+    """Lowercase, unaccented, punctuation flattened to spaces."""
+    text = unicodedata.normalize("NFKD", text or "").encode("ascii", "ignore").decode()
+    return " " + re.sub(r"[^a-z0-9]+", " ", text.lower()).strip() + " "
+
+
+_ACRONYM_RE = re.compile(r"\(([A-Z][A-Z0-9\-/]{2,9})\)")
+# Words that are an acronym somewhere but far too generic to match on alone.
+_ACRONYM_STOPWORDS = {"ec", "aha", "cecem", "ende", "adiel", "otro", "naemt"}
+
+
+def _alias_index() -> dict[str, set[str]]:
+    """Every name a person might type -> the course ids it could mean.
+
+    Aliases that could mean more than one course ("primeros auxilios" matches
+    four) stay in the index with all of them, so the caller can see the
+    ambiguity and decline to guess.
+    """
+    def build() -> dict[str, set[str]]:
+        index: dict[str, set[str]] = {}
+        for course in _all_courses():
+            aliases: set[str] = set()
+            for field in ("name_es", "name_en"):
+                raw = course.get(field) or ""
+                for acronym in _ACRONYM_RE.findall(raw):
+                    if acronym.lower() not in _ACRONYM_STOPWORDS:
+                        aliases.add(_normalise(acronym))
+                aliases.add(_normalise(raw))
+                # The name without its parenthetical, e.g. "Urgencias Clínicas".
+                aliases.add(_normalise(re.sub(r"\([^)]*\)", "", raw)))
+            aliases.add(_normalise(course["course_id"]))
+            for alias in aliases:
+                if len(alias.strip()) >= 3:
+                    index.setdefault(alias, set()).add(course["course_id"])
+        return index
+
+    return _cached("alias_index", build)
+
+
+def resolve_course_in_text(text: str) -> dict | None:
+    """The one course a message unmistakably names, or None.
+
+    Used to put a course's card on screen when someone types its name instead
+    of tapping it. Deliberately strict: it returns a course only when exactly
+    one matches, so "¿qué cursos de primeros auxilios tienen?" — which fits
+    four courses — falls through to the normal answer rather than picking one.
+    """
+    spoken = set(_normalise(text).split())
+    if not spoken:
+        return None
+
+    # Every word of the name has to be present, but not necessarily adjacent:
+    # Spanish drops articles in ("háblame del diplomado *de* fisioterapia
+    # respiratoria") that a plain substring match would trip over.
+    hits = [
+        (alias.split(), ids)
+        for alias, ids in _alias_index().items()
+        if set(alias.split()) <= spoken
+    ]
+    if not hits:
+        return None
+
+    # The most words matched is the most specific thing they said, which is how
+    # "ventilación mecánica no invasiva" beats "ventilación mecánica".
+    words, ids = max(hits, key=lambda pair: len(pair[0]))
+    if len(ids) != 1:
+        return None
+    return get_course(next(iter(ids)))
 
 
 def search_by_name(term: str, limit: int = 5) -> list[dict]:
